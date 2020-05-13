@@ -21,6 +21,7 @@ int main(int argc, char** argv) {
   std::cout << "cout: starting server: " << FLAGS_port << std::endl;
 
   tgnews::Server server(FLAGS_port);
+  server.Run();
 
   return 0;
 }
