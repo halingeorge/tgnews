@@ -2,5 +2,5 @@ cc_test(
     name = "server_test",
     srcs = ["test_server.cpp"],
     deps = ["//server:server",
-            "//third_party/googletest:gtest_main"],
+            "//external:gtest_main"],
 )

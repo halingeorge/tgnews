@@ -3,5 +3,5 @@ cc_library(
     hdrs = ["server.h"],
     srcs = ["server.cpp"],
     visibility = ["//visibility:public"],
-    deps = ["//third_party/glog:glog"],
+    deps = ["//external:glog"],
 )
