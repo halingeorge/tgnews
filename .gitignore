@@ -37,3 +37,4 @@ bazel-*
 cmake-*
 
 build
+.vscode
