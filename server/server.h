@@ -1,19 +1,19 @@
 #pragma once
 
+#include "third_party/simple_web_server/server_http.hpp"
+
 #include <cstdint>
 
 namespace tgnews {
 
 class Server {
  public:
-  Server(uint32_t port);
-
-  uint32_t Port() const { return port_; }
+  Server();
 
   void Run();
 
  private:
-  uint32_t port_;
+  SimpleWeb::Server<SimpleWeb::HTTP> server_;
 };
 
 }  // namespace tgnews

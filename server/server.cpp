@@ -2,7 +2,7 @@
 
 namespace tgnews {
 
-Server::Server(uint32_t port) : port_(port) {
+Server::Server() : server_() {
 }
 
 void Server::Run() {

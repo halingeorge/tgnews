@@ -5,7 +5,6 @@
 
 #include <iostream>
 
-DEFINE_int32(port, 10000, "Listening port");
 DEFINE_bool(log_to_stderr, false, "Listening port");
 
 int main(int argc, char** argv) {
@@ -15,11 +14,7 @@ int main(int argc, char** argv) {
 
   google::InitGoogleLogging(argv[0]);
 
-  LOG(INFO) << "starting server\n";
-
-  std::cout << "cout: starting server: " << FLAGS_port << std::endl;
-
-  tgnews::Server server(FLAGS_port);
+  tgnews::Server server;
   server.Run();
 
   return 0;
