@@ -35,6 +35,5 @@
 
 bazel-*
 cmake-*
-CMakeLists.txt
 
 build
