@@ -3,13 +3,18 @@ cmake_minimum_required(VERSION 3.15)
 project(tgnews)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_CXX_STANDARD 17)
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libstdc++")
 
 set(BASEPATH "${CMAKE_SOURCE_DIR}")
 INCLUDE_DIRECTORIES("${BASEPATH}")
 
+set(BUILD_TESTING FALSE)
 add_subdirectory(third_party)
+unset(BUILD_TESTING)
 
 add_subdirectory(bin)
 add_subdirectory(server)
