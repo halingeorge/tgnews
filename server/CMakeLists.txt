@@ -10,4 +10,6 @@ include_directories(../third_party/jsoncpp)
 
 add_library(server ${SRCS})
 
-target_link_libraries(server simple-web-server glog jsoncpp_lib)
+find_package(Boost COMPONENTS filesystem REQUIRED)
+
+target_link_libraries(server simple-web-server glog jsoncpp_lib fmt ${Boost_FILESYSTEM_LIBRARY})
