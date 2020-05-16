@@ -1,5 +1,7 @@
 #include "server/server.h"
 #include "server/file_cache.h"
+#include "server/context.h"
+
 
 #include "gflags/gflags.h"
 #include "glog/logging.h"
@@ -8,6 +10,7 @@
 
 DEFINE_int32(port, 10000, "Listening port");
 DEFINE_bool(log_to_stderr, false, " log to stderr?");
+DEFINE_string(modelsPath, "models", " subj");
 
 int main(int argc, char** argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, false);
@@ -25,6 +28,8 @@ int main(int argc, char** argv) {
   }
 
   std::cout << "Runnnig mode - " << mode << std::endl;
+
+  tgnews::Context context(FLAGS_modelsPath);
 
   tgnews::FileManager file_manager;
   tgnews::FileCache file_cache(file_manager);
