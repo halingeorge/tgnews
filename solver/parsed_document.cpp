@@ -1,4 +1,5 @@
 #include "parsed_document.h"
+#include "run_fasttext.h"
 
 #include <third_party/tinyxml2/tinyxml2.h>
 
@@ -109,6 +110,22 @@ namespace tgnews {
     const tinyxml2::XMLElement* aElement = addressElement->FirstChildElement("a");
     if (aElement && aElement->Attribute("rel") && std::string(aElement->Attribute("rel")) == "author") {
         Author = aElement->GetText();
+    }
+  }
+
+  void ParsedDoc::ParseLang(const fasttext::FastText* model) {
+    std::string sample(Title + " " + Description + " " + Text.substr(0, 100));
+    auto pair = RunFasttext(model, sample, 0.4);
+    if (!pair) {
+      Lang = std::nullopt;
+      return;
+    }
+    const std::string& label = pair->first;
+    double probability = pair->second;
+    if ((label == "ru") && probability < 0.6) {
+      Lang = std::string("tg");
+    } else {
+      Lang = label;
     }
   }
 

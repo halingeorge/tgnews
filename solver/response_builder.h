@@ -1,3 +1,5 @@
+#include "parsed_document.h"
+
 #include "server/context.h"
 #include "base/document.h"
 
@@ -16,7 +18,7 @@ namespace tgnews {
     CalculatedResponses AddDocuments(const std::vector<tgnews::Document*>& docs);
   private:
 
-    std::vector<tgnews::Document*> Docs;
+    std::vector<tgnews::ParsedDoc> Docs;
     tgnews::Context* Context;
   };
 

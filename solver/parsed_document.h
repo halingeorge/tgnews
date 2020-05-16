@@ -1,5 +1,7 @@
 #include "base/document.h"
 
+#include "third_party/fastText/src/fasttext.h"
+
 #include <string>
 #include <vector>
 
@@ -7,7 +9,7 @@ namespace tgnews {
   class ParsedDoc {
   public:
     ParsedDoc(const Document& doc);
-
+    void ParseLang(const fasttext::FastText* model);
   private:
     std::string Title;
     std::string Url;
@@ -21,5 +23,7 @@ namespace tgnews {
     uint64_t FetchTime = 0;
 
     std::vector<std::string> OutLinks;
+
+    std::optional<std::string> Lang;
   };
 }
