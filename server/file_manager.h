@@ -1,6 +1,7 @@
 #pragma once
 
 #include "server/base.h"
+#include "server/document.h"
 
 #include "glog/logging.h"
 #include "json/json.h"
@@ -19,15 +20,6 @@
 
 namespace tgnews {
 
-struct Document {
-  Document(std::string name, std::string content, uint64_t deadline)
-      : name(std::move(name)), content(std::move(content)), deadline(deadline) {
-  }
-
-  std::string name;
-  std::string content;
-  uint64_t deadline;
-};
 
 class FileManager {
  public:
