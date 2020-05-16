@@ -14,12 +14,12 @@
 #include <map>
 #include <memory>
 #include <unordered_map>
+#include <vector>
 
 #include <boost/filesystem.hpp>
 #include <boost/range/iterator_range.hpp>
 
 namespace tgnews {
-
 
 class FileManager {
  public:
@@ -89,6 +89,15 @@ class FileManager {
     LOG(INFO) << "file still alive: " << filename;
 
     return it->second->deadline > now;
+  }
+
+  std::vector<Document*> GetDocuments() {
+    std::vector<Document*> documents;
+    documents.reserve(document_by_name_.size());
+    for (auto& [name, document_ptr] : document_by_name_) {
+      documents.push_back(document_ptr);
+    }
+    return documents;
   }
 
  private:

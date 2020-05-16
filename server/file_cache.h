@@ -11,6 +11,10 @@ class FileCache {
     return file_manager_.IsFileStillAlive(filename);
   }
 
+  std::vector<Document*> GetDocuments() {
+    return file_manager_.GetDocuments();
+  }
+
  private:
   FileManager& file_manager_;
 };
