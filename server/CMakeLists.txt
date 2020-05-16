@@ -4,9 +4,10 @@ set(CMAKE_CXX_STANDARD 17)
 
 file(GLOB_RECURSE SRCS *.cpp *.h)
 
-include_directories(../third_party/simple_web_server)
-include_directories(../third_party/glog)
-include_directories(../third_party/jsoncpp)
+include_directories(third_party/simple_web_server)
+include_directories(third_party/glog)
+include_directories(third_party/jsoncpp/include)
+include_directories(third_party/fmt/include)
 
 add_library(server ${SRCS})
 

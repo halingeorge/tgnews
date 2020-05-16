@@ -3,7 +3,7 @@
 #include <cstdint>
 
 #include "server/file_manager.h"
-#include "third_party/simple_web_server/server_http.hpp"
+#include "server_http.hpp"
 
 namespace tgnews {
 

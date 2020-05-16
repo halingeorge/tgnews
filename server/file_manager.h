@@ -3,8 +3,8 @@
 #include "server/base.h"
 
 #include "glog/logging.h"
-#include "third_party/jsoncpp/include/json/json.h"
-#include "third_party/fmt/include/fmt/format.h"
+#include "json/json.h"
+#include "fmt/format.h"
 
 #include <optional>
 #include <string>

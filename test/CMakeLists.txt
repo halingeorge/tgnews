@@ -3,8 +3,8 @@ cmake_minimum_required(VERSION 3.15)
 enable_testing()
 
 include_directories(
-    ../server
-    ../third_party/gtest
+    server
+    third_party/gtest
 )
 
 file(GLOB_RECURSE SRCS *.cpp *.h)
