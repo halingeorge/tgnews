@@ -1,4 +1,4 @@
-#include "server/document.h"
+#include "document.h"
 
 namespace tgnews {
 

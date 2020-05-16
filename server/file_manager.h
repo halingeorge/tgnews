@@ -1,7 +1,7 @@
 #pragma once
 
 #include "server/base.h"
-#include "server/document.h"
+#include "base/document.h"
 
 #include "glog/logging.h"
 #include "json/json.h"

@@ -15,4 +15,4 @@ add_library(server ${SRCS})
 
 find_package(Boost COMPONENTS filesystem REQUIRED)
 
-target_link_libraries(server simple-web-server glog jsoncpp_lib fmt fasttext-static ${Boost_FILESYSTEM_LIBRARY})
+target_link_libraries(server simple-web-server glog jsoncpp_lib fmt fasttext-static ${Boost_FILESYSTEM_LIBRARY} base)

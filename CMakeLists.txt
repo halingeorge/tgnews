@@ -6,7 +6,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_CXX_STANDARD 17)
 
 if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE Release)
+  set(CMAKE_BUILD_TYPE Release)
 endif()
 
 
@@ -19,3 +19,4 @@ add_subdirectory(bin)
 add_subdirectory(server)
 add_subdirectory(test)
 add_subdirectory(solver)
+add_subdirectory(base)
