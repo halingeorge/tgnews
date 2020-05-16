@@ -1,4 +1,5 @@
 #include "server/server.h"
+#include "server/file_cache.h"
 
 #include "gflags/gflags.h"
 #include "glog/logging.h"
@@ -24,6 +25,9 @@ int main(int argc, char** argv) {
   }
 
   std::cout << "Runnnig mode - " << mode << std::endl;
+
+  tgnews::FileManager file_manager;
+  tgnews::FileCache file_cache(file_manager);
 
   if (mode == "server") {
     tgnews::Server server(FLAGS_port);
