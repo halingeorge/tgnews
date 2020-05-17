@@ -17,8 +17,12 @@ class Server {
 
   void Run();
 
+  void Stop();
+
  private:
   void SetupHandlers();
+
+  Json::Value GetDocumentThreads(uint64_t period, std::string lang_code, std::string category);
 
  private:
   uint32_t port_;
