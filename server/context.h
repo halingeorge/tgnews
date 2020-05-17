@@ -1,4 +1,4 @@
-#pragma once 
+#pragma once
 #include <string>
 #include <memory>
 
@@ -6,10 +6,10 @@
 
 namespace tgnews {
 
-  class Context {
-  public:
-    Context(const std::string modelPath);
-    std::unique_ptr<fasttext::FastText> langDetect;
-  };
+class Context {
+ public:
+  Context(const std::string modelPath);
+  std::unique_ptr<fasttext::FastText> langDetect;
+};
 
 }

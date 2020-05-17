@@ -94,7 +94,7 @@ class FileManager {
   std::vector<Document*> GetDocuments() {
     std::vector<Document*> documents;
     documents.reserve(document_by_name_.size());
-    for (auto& [name, document_ptr] : document_by_name_) {
+    for (auto&[name, document_ptr] : document_by_name_) {
       documents.push_back(document_ptr);
     }
     return documents;

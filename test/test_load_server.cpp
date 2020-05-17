@@ -20,12 +20,8 @@ void PutRequest(SimpleWeb::Client<SimpleWeb::HTTP>& client,
   headers.emplace("Content-Type", "text/html");
   headers.emplace("Cache-Control", fmt::format("max-age={0}", max_age));
   headers.emplace("Content-Length", fmt::format("{0}", content.size()));
-  try {
-    auto response = client.request("PUT", fmt::format("/{0}", filename), content, headers);
-    EXPECT_EQ(response->status_code, "201 Created");
-  } catch (std::exception& e) {
-    LOG(FATAL) << "catched exception in PutRequest: " << e.what();
-  }
+  auto response = client.request("PUT", fmt::format("/{0}", filename), content, headers);
+  EXPECT_EQ(response->status_code, "201 Created");
 }
 
 std::string GetHeaderValue(const SimpleWeb::CaseInsensitiveMultimap& headers, std::string_view header_key) {
@@ -38,17 +34,12 @@ std::vector<std::string> GetArticles(SimpleWeb::Client<SimpleWeb::HTTP>& client,
                                      uint64_t period = 60,
                                      std::string_view lang_code = "ru",
                                      std::string_view category = "cars") {
-  std::shared_ptr<SimpleWeb::Client<SimpleWeb::HTTP>::Response> response;
-  try {
-    SimpleWeb::CaseInsensitiveMultimap headers;
-    headers.emplace("Connection", "Keep-Alive");
-    response =
-        client.request("GET",
-                       fmt::format("/threads?period={0}&lang_code={1}&category={2}", period, lang_code, category),
-            /*content =*/ "", headers);
-  } catch (std::exception& e) {
-    LOG(FATAL) << "catched exception in GetArticles: " << e.what();
-  }
+  SimpleWeb::CaseInsensitiveMultimap headers;
+  headers.emplace("Connection", "Keep-Alive");
+  auto response =
+      client.request("GET",
+                     fmt::format("/threads?period={0}&lang_code={1}&category={2}", period, lang_code, category),
+          /*content =*/ "", headers);
 
   std::vector<std::string> articles;
   EXPECT_EQ(response->status_code, "200 OK");
@@ -94,13 +85,9 @@ TEST(ServerTest, LoadTest) {
 
   std::this_thread::sleep_for(std::chrono::seconds(5));
   LOG(INFO) << "get articles";
-  try {
-    auto articles = GetArticles(client);
-    EXPECT_EQ(articles.size(), 1);
-    EXPECT_EQ(articles[0], kFilename);
-  } catch (std::exception& e) {
-    LOG(FATAL) << "exception from GetArticles: " << e.what();
-  }
+  auto articles = GetArticles(client);
+  EXPECT_EQ(articles.size(), 1);
+  EXPECT_EQ(articles[0], kFilename);
 
   server.Stop();
   server_thread.join();

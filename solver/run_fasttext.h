@@ -3,5 +3,7 @@
 #include <optional>
 #include <string>
 namespace tgnews {
-  std::optional<std::pair<std::string, double>> RunFasttext(const fasttext::FastText* model, const std::string& originalText, double border);
+std::optional<std::pair<std::string, double>> RunFasttext(const fasttext::FastText* model,
+                                                          const std::string& originalText,
+                                                          double border);
 }
