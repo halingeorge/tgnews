@@ -42,6 +42,8 @@ static void ParseLinksFromText(const tinyxml2::XMLElement* element, std::vector<
 namespace tgnews {
 
   ParsedDoc::ParsedDoc(const Document& doc) {
+    FileName = doc.name;
+
     tinyxml2::XMLDocument originalDoc;
     originalDoc.Parse(doc.content.data());
     const tinyxml2::XMLElement* htmlElement = originalDoc.FirstChildElement("html");

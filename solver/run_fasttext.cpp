@@ -1,5 +1,5 @@
-
-
+#include "run_fasttext.h"
+#include <sstream>
 namespace tgnews {
   std::optional<std::pair<std::string, double>> RunFasttext(const fasttext::FastText* model, const std::string& originalText, double border) {
     std::string text = originalText;

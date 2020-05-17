@@ -2,6 +2,7 @@
 #include "server/file_cache.h"
 #include "server/context.h"
 
+#include "solver/response_builder.h"
 
 #include "gflags/gflags.h"
 #include "glog/logging.h"
@@ -27,9 +28,10 @@ int main(int argc, char** argv) {
     return -1;
   }
 
-  std::cout << "Runnnig mode - " << mode << std::endl;
+  std::cout << "Running mode - " << mode << std::endl;
 
-  tgnews::Context context(FLAGS_modelsPath);
+  tgnews::Context* context = new tgnews::Context(FLAGS_modelsPath);
+  tgnews::ResponseBuilder responseBuilder(context);
 
   tgnews::FileManager file_manager;
   tgnews::FileCache file_cache(file_manager);
@@ -38,7 +40,10 @@ int main(int argc, char** argv) {
     tgnews::Server server(FLAGS_port);
     server.Run();
   } else if (mode == "languages") {
-    
+    if (file_cache.GetDocuments().size() == 0) {
+      std::cerr << "empty docs" << std::endl;
+    }
+    std::cout << responseBuilder.AddDocuments(file_cache.GetDocuments()).GetAns();
   } else if (mode == "news") {
 
   } else if (mode == "categories") {
