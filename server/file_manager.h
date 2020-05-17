@@ -15,6 +15,7 @@
 #include <memory>
 #include <unordered_map>
 #include <vector>
+#include <set>
 
 #include <boost/filesystem.hpp>
 #include <boost/range/iterator_range.hpp>
@@ -24,6 +25,8 @@ namespace tgnews {
 class FileManager {
  public:
   explicit FileManager(std::string content_dir = "content") : content_dir_(std::move(content_dir)) {
+    boost::filesystem::path content_path = content_dir_;
+    VERIFY(boost::filesystem::exists(content_path), fmt::format("content path does not exist: {}", content_dir));
     RestoreFiles();
   }
 
@@ -33,10 +36,14 @@ class FileManager {
 
     auto it = document_by_name_.find(filename);
     if (it != document_by_name_.end()) {
-      auto* document = it->second;
+      auto* document = it->second.get();
+
+      documents_with_deadline_.erase({document->deadline, document});
 
       document->content = std::move(content);
       document->deadline = deadline;
+
+      documents_with_deadline_.emplace(document->deadline, document);
 
       DumpOnDisk(filepath, *document);
 
@@ -49,13 +56,16 @@ class FileManager {
   }
 
   bool RemoveFile(std::string_view filename) {
+    LOG(INFO) << "removing file: " << filename;
     auto it = document_by_name_.find(filename.data());
     if (it == document_by_name_.end()) {
       return false;
     }
+    LOG(INFO) << "content dir: " << content_dir_;
+    LOG(INFO) << "name: " << it->second->name;
     boost::filesystem::path filepath = fmt::format("{0}/{1}", content_dir_, it->second->name);
     RemoveFileFromDisk(filepath);
-    document_by_deadline_.erase(document_by_deadline_.find(it->second->deadline));
+    documents_with_deadline_.erase({it->second->deadline, it->second.get()});
     document_by_name_.erase(it);
     return true;
   }
@@ -63,7 +73,7 @@ class FileManager {
   void RemoveOutdatedFiles() {
     auto now = std::chrono::time_point<std::chrono::seconds>().time_since_epoch().count();
 
-    for (auto it = document_by_deadline_.begin(); it != document_by_deadline_.end(); ++it) {
+    for (auto it = documents_with_deadline_.begin(); it != documents_with_deadline_.end(); ++it) {
       if (it->first > now) {
         break;
       }
@@ -74,8 +84,8 @@ class FileManager {
 
       RemoveFileFromDisk(filepath);
 
-      document_by_deadline_.erase(it);
       document_by_name_.erase(it->second->name);
+      documents_with_deadline_.erase(it);
     }
   }
 
@@ -95,7 +105,7 @@ class FileManager {
     std::vector<Document*> documents;
     documents.reserve(document_by_name_.size());
     for (auto&[name, document_ptr] : document_by_name_) {
-      documents.push_back(document_ptr);
+      documents.push_back(document_ptr.get());
     }
     return documents;
   }
@@ -108,8 +118,8 @@ class FileManager {
 
     LOG(INFO) << "create document: " << document_ptr->name;
 
-    document_by_name_.emplace(document_ptr->name, document_ptr.get());
-    document_by_deadline_.emplace(deadline, std::move(document_ptr));
+    documents_with_deadline_.emplace(deadline, address);
+    document_by_name_.emplace(document_ptr->name, std::move(document_ptr));
 
     return *address;
   }
@@ -126,6 +136,9 @@ class FileManager {
     file << value;
     file.close();
 
+    boost::filesystem::path path = filepath.data();
+    VERIFY(boost::filesystem::exists(path), "file has to be on disk after it's written");
+
     LOG(INFO) << "written on disk: " << filepath;
   }
 
@@ -133,10 +146,6 @@ class FileManager {
     auto now = std::chrono::time_point<std::chrono::seconds>().time_since_epoch().count();
 
     boost::filesystem::path path = content_dir_;
-    if (!boost::filesystem::exists(path)) {
-      return;
-    }
-
     for (const auto& entry : boost::make_iterator_range(boost::filesystem::directory_iterator(path), {})) {
       boost::filesystem::ifstream file(entry.path());
 
@@ -155,7 +164,7 @@ class FileManager {
       CreateDocument(entry.path().filename().string(), std::move(content), deadline);
     }
 
-    LOG(INFO) << "restored file count: " << document_by_deadline_.size();
+    LOG(INFO) << "restored file count: " << document_by_name_.size();
   }
 
   static void RemoveFileFromDisk(const boost::filesystem::path& filepath) {
@@ -165,8 +174,8 @@ class FileManager {
 
  private:
   std::string content_dir_;
-  std::multimap<uint64_t, std::unique_ptr<Document>> document_by_deadline_;
-  std::unordered_map<std::string, Document*> document_by_name_;
+  std::unordered_map<std::string, std::unique_ptr<Document>> document_by_name_;
+  std::set<std::pair<uint64_t, Document*>> documents_with_deadline_;
 };
 
 }  // namespace tgnews

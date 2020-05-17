@@ -64,6 +64,7 @@ void Server::Run() {
 
 void Server::Stop() {
   server_.stop();
+  LOG(INFO) << "server stopped";
 }
 
 void Server::SetupHandlers() {
@@ -90,7 +91,8 @@ void Server::SetupHandlers() {
           std::string data = fmt::format("HTTP/1.1 {0} Created\r\n\r\n", status_code);
           response->write(data.data(), data.size());
         } catch (std::exception& e) {
-          LOG(FATAL) << "exception in PUT handler: " << e.what();
+          LOG(ERROR) << "exception in PUT handler: " << e.what();
+          response->write(SimpleWeb::StatusCode::server_error_internal_server_error, e.what());
         }
       };
 
@@ -106,7 +108,8 @@ void Server::SetupHandlers() {
           std::string data = fmt::format("HTTP/1.1 {0} No Content\r\n\r\n", status_code);
           response->write(data.data(), data.size());
         } catch (std::exception& e) {
-          LOG(FATAL) << "exception in DELETE handler: " << e.what();
+          LOG(ERROR) << "exception in DELETE handler: " << e.what();
+          response->write(SimpleWeb::StatusCode::server_error_internal_server_error, e.what());
         }
       };
 
@@ -122,13 +125,15 @@ void Server::SetupHandlers() {
           Json::StreamWriterBuilder builder;
           response->write(Json::writeString(builder, GetDocumentThreads(period, lang_code, category)), headers);
         } catch (std::exception& e) {
-          LOG(FATAL) << "exception in GET handler: " << e.what();
+          LOG(ERROR) << "exception in GET handler: " << e.what();
+          response->write(SimpleWeb::StatusCode::server_error_internal_server_error, e.what());
         }
       };
 
   server_.default_resource["GET"] = [this](std::shared_ptr<HttpServer::Response> response,
                                            std::shared_ptr<HttpServer::Request> request) {
-    LOG(FATAL) << "unhandled request: " << request->path;
+    LOG(ERROR) << "unhandled request: " << request->path;
+    response->write(SimpleWeb::StatusCode::server_error_not_implemented);
   };
 }
 
@@ -136,6 +141,7 @@ Json::Value Server::GetDocumentThreads(uint64_t /*period*/, std::string /*lang_c
   Json::Value value;
   Json::Value articles;
   for (auto document_ptr : file_manager_->GetDocuments()) {
+    LOG(INFO) << "document name: " << document_ptr->name;
     articles.append(document_ptr->name);
   }
   value["articles"] = std::move(articles);
