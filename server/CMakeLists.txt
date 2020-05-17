@@ -11,8 +11,8 @@ include_directories(third_party/jsoncpp/include)
 include_directories(third_party/fmt/include)
 include_directories(third_party/fmt/include)
 
-add_library(server ${SRCS})
+add_library(server STATIC ${SRCS})
 
 find_package(Boost COMPONENTS filesystem REQUIRED)
 
-target_link_libraries(server simple-web-server glog jsoncpp_lib fmt fasttext-static ${Boost_FILESYSTEM_LIBRARY} base)
+target_link_libraries(server simple-web-server glog jsoncpp_lib fmt fasttext-static base solver ${Boost_FILESYSTEM_LIBRARY})
