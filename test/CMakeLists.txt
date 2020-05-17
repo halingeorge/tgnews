@@ -11,5 +11,5 @@ file(GLOB_RECURSE SRCS *.cpp *.h)
 
 add_executable(test_server ${SRCS})
 
-set_target_properties(test_server PROPERTIES COMPILE_FLAGS "-pthread -std=c++17 -O3")
+set_target_properties(test_server PROPERTIES COMPILE_FLAGS "")
 target_link_libraries(test_server server gtest_main)
