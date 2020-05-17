@@ -2,6 +2,7 @@
 
 #include "server/base.h"
 #include "base/document.h"
+#include "base/time_helpers.h"
 
 #include "glog/logging.h"
 #include "json/json.h"
@@ -31,7 +32,7 @@ class FileManager {
   }
 
   bool StoreOrUpdateFile(std::string filename, std::string content, uint64_t max_age) {
-    auto deadline = std::chrono::time_point<std::chrono::seconds>().time_since_epoch().count() + max_age;
+    auto deadline = DeadlineCount(std::chrono::seconds(max_age));
     std::string filepath = fmt::format("{0}/{1}", content_dir_, filename);
 
     auto it = document_by_name_.find(filename);
@@ -71,7 +72,7 @@ class FileManager {
   }
 
   void RemoveOutdatedFiles() {
-    auto now = std::chrono::time_point<std::chrono::seconds>().time_since_epoch().count();
+    auto now = NowCount();
 
     for (auto it = documents_with_deadline_.begin(); it != documents_with_deadline_.end(); ++it) {
       if (it->first > now) {

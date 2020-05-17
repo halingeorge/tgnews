@@ -72,6 +72,8 @@ void Server::SetupHandlers() {
       [this](std::shared_ptr<HttpServer::Response> response,
              std::shared_ptr<HttpServer::Request> request) {
         try {
+          file_manager_->RemoveOutdatedFiles();
+
           auto filename = request->path.substr(1);
           auto content = request->content.string();
           LOG(INFO) << "received put request: " << filename;
@@ -100,6 +102,8 @@ void Server::SetupHandlers() {
       [this](std::shared_ptr<HttpServer::Response> response,
              std::shared_ptr<HttpServer::Request> request) {
         try {
+          file_manager_->RemoveOutdatedFiles();
+
           auto filename = request->path.substr(1);
           LOG(INFO) << "received delete request: " << filename;
           auto removed = file_manager_->RemoveFile(filename);
@@ -117,6 +121,8 @@ void Server::SetupHandlers() {
       [this](std::shared_ptr<HttpServer::Response> response,
              std::shared_ptr<HttpServer::Request> request) {
         try {
+          file_manager_->RemoveOutdatedFiles();
+
           auto[period, lang_code, category] = ParseThreadsRequest(std::move(request->query_string));
           LOG(INFO)
               << fmt::format("get threads with period={0} lang_code={1} category={2}", period, lang_code, category);
@@ -141,7 +147,6 @@ Json::Value Server::GetDocumentThreads(uint64_t /*period*/, std::string /*lang_c
   Json::Value value;
   Json::Value articles;
   for (auto document_ptr : file_manager_->GetDocuments()) {
-    LOG(INFO) << "document name: " << document_ptr->name;
     articles.append(document_ptr->name);
   }
   value["articles"] = std::move(articles);

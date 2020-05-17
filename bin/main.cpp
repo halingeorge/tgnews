@@ -20,7 +20,6 @@ int main(int argc, char** argv) {
 
   google::InitGoogleLogging(argv[0]);
 
-
   std::string mode = argv[1];
   std::string content_dir = argv[2];
   std::vector<std::string> modes = {"server", "languages", "news", "categories", "threads"};

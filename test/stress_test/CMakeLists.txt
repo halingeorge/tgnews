@@ -12,4 +12,4 @@ file(GLOB_RECURSE SRCS *.cpp *.h)
 add_executable(stress_test ${SRCS})
 
 set_target_properties(stress_test PROPERTIES COMPILE_FLAGS "")
-target_link_libraries(stress_test server gtest_main gmock_main)
+target_link_libraries(stress_test base server gtest_main gmock_main)
