@@ -4,19 +4,19 @@ namespace tgnews {
 
 class FileCache {
  public:
-  explicit FileCache(FileManager& file_manager) : file_manager_(file_manager) {
+  explicit FileCache(FileManager* file_manager) : file_manager_(file_manager) {
   }
 
   bool IsFileStillAlive(std::string_view filename) {
-    return file_manager_.IsFileStillAlive(filename);
+    return file_manager_->IsFileStillAlive(filename);
   }
 
   std::vector<Document*> GetDocuments() {
-    return file_manager_.GetDocuments();
+    return file_manager_->GetDocuments();
   }
 
  private:
-  FileManager& file_manager_;
+  FileManager* const file_manager_;
 };
 
 }  // namespace tgnews

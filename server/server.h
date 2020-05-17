@@ -9,7 +9,7 @@ namespace tgnews {
 
 class Server {
  public:
-  Server(uint32_t port);
+  Server(uint32_t port, std::unique_ptr<FileManager> file_manager);
 
   ~Server();
 
@@ -26,7 +26,7 @@ class Server {
 
  private:
   uint32_t port_;
-  FileManager file_manager_;
+  std::unique_ptr<FileManager> file_manager_;
   SimpleWeb::Server<SimpleWeb::HTTP> server_;
 };
 

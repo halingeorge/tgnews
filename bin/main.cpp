@@ -22,22 +22,22 @@ int main(int argc, char** argv) {
 
 
   std::string mode = argv[1];
+  std::string content_dir = argv[2];
   std::vector<std::string> modes = {"server", "languages", "news", "categories", "threads"};
   if (std::find(modes.begin(), modes.end(), mode) == modes.end()) {
-    std::cerr << "unknown mode " << mode << std::endl;
-    return -1;
+    LOG(FATAL) << fmt::format("unknown mode: {}", mode);
   }
 
-  std::cout << "Running mode - " << mode << std::endl;
+  LOG(INFO) << fmt::format("Running mode - {}", mode);
 
-  tgnews::Context* context = new tgnews::Context(FLAGS_modelsPath);
-  tgnews::ResponseBuilder responseBuilder(context);
+  tgnews::Context context(FLAGS_modelsPath);
+  tgnews::ResponseBuilder responseBuilder(std::move(context));
 
-  tgnews::FileManager file_manager;
-  tgnews::FileCache file_cache(file_manager);
+  auto file_manager = std::make_unique<tgnews::FileManager>(std::move(content_dir));
+  tgnews::FileCache file_cache(file_manager.get());
 
   if (mode == "server") {
-    tgnews::Server server(FLAGS_port);
+    tgnews::Server server(FLAGS_port, std::move(file_manager));
     server.Run();
   } else if (mode == "languages") {
     if (file_cache.GetDocuments().size() == 0) {

@@ -63,7 +63,7 @@ std::vector<std::string> GetArticles(SimpleWeb::Client<SimpleWeb::HTTP>& client,
 TEST(ServerTest, LoadTest) {
   static constexpr size_t kPort = 12345;
 
-  Server server(kPort);
+  Server server(kPort, std::make_unique<FileManager>());
 
   std::thread server_thread([&server]() {
     server.Run();

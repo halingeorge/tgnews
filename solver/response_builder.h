@@ -17,12 +17,12 @@ class CalculatedResponses {
 
 class ResponseBuilder {
  public:
-  ResponseBuilder(tgnews::Context* context);
+  ResponseBuilder(tgnews::Context context);
   CalculatedResponses AddDocuments(const std::vector<tgnews::Document*>& docs);
  private:
 
   std::vector<tgnews::ParsedDoc> Docs;
-  tgnews::Context* Context;
+  tgnews::Context Context;
 };
 
 }

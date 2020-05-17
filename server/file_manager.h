@@ -23,13 +23,13 @@ namespace tgnews {
 
 class FileManager {
  public:
-  FileManager() {
+  explicit FileManager(std::string content_dir = "content") : content_dir_(std::move(content_dir)) {
     RestoreFiles();
   }
 
   bool StoreOrUpdateFile(std::string filename, std::string content, uint64_t max_age) {
     auto deadline = std::chrono::time_point<std::chrono::seconds>().time_since_epoch().count() + max_age;
-    std::string filepath = fmt::format("{0}/{1}", kContentDir, filename);
+    std::string filepath = fmt::format("{0}/{1}", content_dir_, filename);
 
     auto it = document_by_name_.find(filename);
     if (it != document_by_name_.end()) {
@@ -53,7 +53,7 @@ class FileManager {
     if (it == document_by_name_.end()) {
       return false;
     }
-    boost::filesystem::path filepath = fmt::format("{0}/{1}", kContentDir, it->second->name);
+    boost::filesystem::path filepath = fmt::format("{0}/{1}", content_dir_, it->second->name);
     RemoveFileFromDisk(filepath);
     document_by_deadline_.erase(document_by_deadline_.find(it->second->deadline));
     document_by_name_.erase(it);
@@ -70,7 +70,7 @@ class FileManager {
 
       LOG(INFO) << "file is outdated: " << it->second->name;
 
-      boost::filesystem::path filepath = fmt::format("{0}/{1}", kContentDir, it->second->name);
+      boost::filesystem::path filepath = fmt::format("{0}/{1}", content_dir_, it->second->name);
 
       RemoveFileFromDisk(filepath);
 
@@ -132,7 +132,7 @@ class FileManager {
   void RestoreFiles() {
     auto now = std::chrono::time_point<std::chrono::seconds>().time_since_epoch().count();
 
-    boost::filesystem::path path = kContentDir;
+    boost::filesystem::path path = content_dir_;
     if (!boost::filesystem::exists(path)) {
       return;
     }
@@ -164,8 +164,7 @@ class FileManager {
   }
 
  private:
-  static constexpr const char* kContentDir = "content";
-
+  std::string content_dir_;
   std::multimap<uint64_t, std::unique_ptr<Document>> document_by_deadline_;
   std::unordered_map<std::string, Document*> document_by_name_;
 };

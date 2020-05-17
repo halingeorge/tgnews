@@ -24,7 +24,7 @@ Json::Value CalculatedResponses::GetAns(const std::string& lang, const std::stri
   return Ans;
 }
 
-ResponseBuilder::ResponseBuilder(tgnews::Context* context) : Context(context) {}
+ResponseBuilder::ResponseBuilder(tgnews::Context context) : Context(std::move(context)) {}
 
 CalculatedResponses ResponseBuilder::AddDocuments(const std::vector<tgnews::Document*>& docs) {
   for (const auto* doc : docs) {
@@ -32,7 +32,7 @@ CalculatedResponses ResponseBuilder::AddDocuments(const std::vector<tgnews::Docu
   }
 
   for (auto& doc : Docs) {
-    doc.ParseLang(Context->langDetect.get());
+    doc.ParseLang(Context.langDetect.get());
   }
 
   return {Docs};

@@ -48,7 +48,8 @@ std::tuple<uint64_t, std::string, std::string> ParseThreadsRequest(std::string q
 
 }  // namespace
 
-Server::Server(uint32_t port) : port_(port) {
+Server::Server(uint32_t port, std::unique_ptr<FileManager> file_manager)
+    : port_(port), file_manager_(std::move(file_manager)) {
   server_.config.port = port;
 
   SetupHandlers();
@@ -81,7 +82,7 @@ void Server::SetupHandlers() {
           auto cache_control_str = GetHeaderValue<std::string_view>(request->header, "Cache-Control");
           uint64_t max_age;
           ParseResult(cache_control_str.substr(8), max_age);
-          auto updated = file_manager_.StoreOrUpdateFile(std::move(filename),
+          auto updated = file_manager_->StoreOrUpdateFile(std::move(filename),
                                                          std::move(content),
                                                          max_age);
 
@@ -99,7 +100,7 @@ void Server::SetupHandlers() {
         try {
           auto filename = request->path.substr(1);
           LOG(INFO) << "received delete request: " << filename;
-          auto removed = file_manager_.RemoveFile(filename);
+          auto removed = file_manager_->RemoveFile(filename);
 
           uint32_t status_code = removed ? 204 : 404;
           std::string data = fmt::format("HTTP/1.1 {0} No Content\r\n\r\n", status_code);
@@ -134,7 +135,7 @@ void Server::SetupHandlers() {
 Json::Value Server::GetDocumentThreads(uint64_t /*period*/, std::string /*lang_code*/, std::string /*category*/) {
   Json::Value value;
   Json::Value articles;
-  for (auto document_ptr : file_manager_.GetDocuments()) {
+  for (auto document_ptr : file_manager_->GetDocuments()) {
     articles.append(document_ptr->name);
   }
   value["articles"] = std::move(articles);
