@@ -60,12 +60,12 @@ std::string GetHeaderValue(const SimpleWeb::CaseInsensitiveMultimap& headers, st
 }
 
 std::vector<std::string> GetArticles(SimpleWeb::Client<SimpleWeb::HTTP>& client,
-                                     uint64_t period = 60,
-                                     std::string_view lang_code = "ru",
-                                     std::string_view category = "cars") {
+                                     std::chrono::seconds period,
+                                     std::string_view lang_code,
+                                     std::string_view category) {
   auto response =
       client.request("GET",
-                     fmt::format("/threads?period={0}&lang_code={1}&category={2}", period, lang_code, category),
+                     fmt::format("/threads?period={0}&lang_code={1}&category={2}", period.count(), lang_code, category),
           /*content =*/ "");
 
   std::vector<std::string> articles;
@@ -111,6 +111,38 @@ std::vector<Document> GenerateDocuments(std::mt19937& mt, size_t count, std::chr
   return documents;
 }
 
+std::vector<std::string> GetDocumentNames(const std::vector<Document>& documents) {
+  std::vector<std::string> document_names;
+  std::transform(documents.begin(), documents.end(), std::back_inserter(document_names), [](const auto& document) {
+    return document.name;
+  });
+  return document_names;
+}
+
+template <typename T>
+std::vector<T> ConcatDocuments(const std::vector<T>& lhs) {
+  return lhs;
+}
+
+template<typename T, typename... Args>
+std::vector<T> ConcatDocuments(const std::vector<T>& lhs, Args&& ... args) {
+  auto result = ConcatDocuments(std::forward<Args>(args)...);
+  result.insert(result.end(), lhs.begin(), lhs.end());
+  return result;
+}
+
+std::vector<std::string> GetArticles(SimpleWeb::Client<SimpleWeb::HTTP>& client) {
+  auto ru_articles = GetArticles(client, 111111111s, "ru", "any");
+  auto en_articles = GetArticles(client, 111111111s, "en", "any");
+
+  auto articles = ConcatDocuments(ru_articles, en_articles);
+
+  std::sort(articles.begin(), articles.end());
+  articles.resize(std::unique(articles.begin(), articles.end()) - articles.begin());
+  
+  return articles;
+}
+
 bool WaitForExactDocuments(SimpleWeb::Client<SimpleWeb::HTTP>& client, std::vector<std::string> names) {
   auto deadline = Deadline(5s);
   while (Now() < deadline) {
@@ -122,25 +154,6 @@ bool WaitForExactDocuments(SimpleWeb::Client<SimpleWeb::HTTP>& client, std::vect
     std::this_thread::sleep_for(1s);
   }
   return false;
-}
-
-std::vector<std::string> GetDocumentNames(const std::vector<Document>& documents) {
-  std::vector<std::string> document_names;
-  std::transform(documents.begin(), documents.end(), std::back_inserter(document_names), [](const auto& document) {
-    return document.name;
-  });
-  return document_names;
-}
-
-std::vector<Document> ConcatDocuments(const std::vector<Document>& lhs) {
-  return lhs;
-}
-
-template <typename... Args>
-std::vector<Document> ConcatDocuments(const std::vector<Document>& lhs, Args&&... args) {
-  auto result = ConcatDocuments(std::forward<Args>(args)...);
-  result.insert(result.end(), lhs.begin(), lhs.end());
-  return result;
 }
 
 }  // namespace
