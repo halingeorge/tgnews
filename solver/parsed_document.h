@@ -7,11 +7,29 @@
 #include <vector>
 
 namespace tgnews {
+
+enum ENewsCategory {
+    NC_NOT_NEWS = -2,
+    NC_UNDEFINED = -1,
+    NC_ANY = 0,
+    NC_SOCIETY,
+    NC_ECONOMY,
+    NC_TECHNOLOGY,
+    NC_SPORTS,
+    NC_ENTERTAINMENT,
+    NC_SCIENCE,
+    NC_OTHER,
+
+    NC_COUNT
+};
+
 class ParsedDoc {
  public:
   ParsedDoc(const Document& doc);
   void ParseLang(const fasttext::FastText* model);
   void Tokenize(const tgnews::Context& context);
+  void DetectCategory(const tgnews::Context& context);
+
  private:
   std::string Title;
   std::string Url;
@@ -30,5 +48,7 @@ class ParsedDoc {
  public:
   std::string FileName;
   std::optional<std::string> Lang;
+  ENewsCategory Category = NC_UNDEFINED;
 };
+
 }

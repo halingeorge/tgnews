@@ -42,7 +42,7 @@ CalculatedResponses ResponseBuilder::AddDocuments(const std::vector<DocumentCons
   }
 
   for (auto& doc : Docs) {
-    doc.ParseLang(Context.langDetect.get());
+    doc.ParseLang(Context.LangDetect.get());
   }
 
   for (auto& doc : Docs) {
