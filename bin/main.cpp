@@ -45,9 +45,9 @@ int main(int argc, char** argv) {
   if (mode == "languages") {
     std::cout << responseBuilder.AddDocuments(docs).LangAns;
   } else if (mode == "news") {
-
+    std::cout << responseBuilder.AddDocuments(docs).NewsAns;    
   } else if (mode == "categories") {
-
+    std::cout << responseBuilder.AddDocuments(docs).CategoryAns;
   } else if (mode == "threads") {
 
   }

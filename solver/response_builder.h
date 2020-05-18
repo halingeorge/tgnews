@@ -16,7 +16,7 @@ class CalculatedResponses {
  public:
   Json::Value LangAns;
   Json::Value NewsAns;
-  Json::Value CategoriesAns;
+  Json::Value CategoryAns;
   Json::Value ThreadsAns;
 };
 
