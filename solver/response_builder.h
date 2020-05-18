@@ -1,6 +1,6 @@
 #include "parsed_document.h"
 
-#include "server/context.h"
+#include "base/context.h"
 #include "base/document.h"
 
 #include "json/json.h"

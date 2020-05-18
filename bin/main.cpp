@@ -1,6 +1,7 @@
 #include "server/server.h"
 #include "server/file_cache.h"
-#include "server/context.h"
+
+#include "base/context.h"
 #include "base/util.h"
 
 #include "solver/response_builder.h"
