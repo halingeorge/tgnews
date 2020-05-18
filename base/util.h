@@ -5,6 +5,6 @@
 
 namespace tgnews {
 
-std::vector<std::unique_ptr<tgnews::Document>> MakeDocumentsFromDir(const std::string& dir);
+std::vector<DocumentConstPtr> MakeDocumentsFromDir(const std::string& dir);
 
 }

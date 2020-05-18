@@ -6,4 +6,4 @@ include_directories(third_party/glog)
 
 add_executable(stress_test stress_test.cpp)
 
-target_link_libraries(stress_test server gflags glog solver)
+target_link_libraries(stress_test server base gflags glog solver)

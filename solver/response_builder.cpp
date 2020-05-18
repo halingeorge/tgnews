@@ -36,7 +36,7 @@ Json::Value CalculatedResponses::GetAns(const std::string& lang, const std::stri
 
 ResponseBuilder::ResponseBuilder(tgnews::Context context) : Context(std::move(context)) {}
 
-CalculatedResponses ResponseBuilder::AddDocuments(const std::vector<std::shared_ptr<const tgnews::Document>>& docs) {
+CalculatedResponses ResponseBuilder::AddDocuments(const std::vector<DocumentConstPtr>& docs) {
   for (const auto& doc : docs) {
     Docs.emplace_back(*doc);
   }

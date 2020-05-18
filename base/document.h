@@ -3,7 +3,10 @@
 #include <chrono>
 #include <string>
 
+#include <memory>
+
 namespace tgnews {
+
 
 class Document {
  public:
@@ -22,5 +25,7 @@ class Document {
   uint64_t deadline;
   State state;
 };
+
+using DocumentConstPtr = std::shared_ptr<const Document>;
 
 }

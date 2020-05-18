@@ -7,13 +7,13 @@
 
 namespace tgnews {
 
-std::vector<std::unique_ptr<tgnews::Document>> MakeDocumentsFromDir(const std::string& dir) {
+std::vector<DocumentConstPtr> MakeDocumentsFromDir(const std::string& dir) {
   boost::filesystem::path path = dir;
-  std::vector<std::unique_ptr<tgnews::Document>> documents;
+  std::vector<DocumentConstPtr> documents;
   for (const auto& entry : boost::make_iterator_range(boost::filesystem::directory_iterator(path), {})) {
     std::ifstream file(entry.path().string());
     std::string content(std::istreambuf_iterator<char>(file), {});
-    documents.emplace_back(new tgnews::Document(entry.path().filename().string(), std::move(content), 0));
+    documents.emplace_back(new tgnews::Document(entry.path().filename().string(), std::move(content), 0, tgnews::Document::State::Added));
   }
   return documents;
 }
