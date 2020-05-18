@@ -9,4 +9,4 @@ include_directories(third_party/jsoncpp/include)
 
 add_library(solver STATIC ${SRCS})
 
-target_link_libraries(solver jsoncpp_lib tinyxml2 base)
+target_link_libraries(solver base jsoncpp_lib tinyxml2 OpenNMTTokenizer)

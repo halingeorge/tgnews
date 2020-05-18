@@ -1,6 +1,7 @@
 #include "parsed_document.h"
 #include "run_fasttext.h"
 
+#include <boost/algorithm/string/join.hpp>
 #include <third_party/tinyxml2/tinyxml2.h>
 
 #include <stdexcept>
@@ -129,6 +130,54 @@ void ParsedDoc::ParseLang(const fasttext::FastText* model) {
   } else {
     Lang = label;
   }
+}
+
+static std::string Preprocess(const std::string& text, const onmt::Tokenizer& tokenizer) {
+  std::vector<std::string> tokens;
+  tokenizer.tokenize(text, tokens);
+  return boost::join(tokens, " ");
+}
+
+void ParsedDoc::Tokenize(const tgnews::Context& context) {
+  GoodTitle = Preprocess(Title, context.Tokenizer);
+  GoodText = Preprocess(Text, context.Tokenizer);
+}
+
+void ParsedDoc::DetectCategory(const tgnews::Context& context) {
+  if (!GoodTitle.size() || !GoodText.size() || !Lang) {
+    Category = NC_UNDEFINED;
+    return;
+  }
+  std::string sample(GoodTitle + " " + GoodText);
+  const fasttext::FastText* model = Lang == "ru" ? context.RuCatModel.get() : context.EnCatModel.get();
+  auto pair = RunFasttext(model, sample, 0.0);
+  if (!pair) {
+    Category = NC_UNDEFINED;
+    return;
+  }
+  const std::string& label = pair->first;
+  if (label == "any") {
+    Category = NC_ANY;
+  } else if (label == "society") {
+    Category = NC_SOCIETY;
+  } else if (label == "economy") {
+    Category = NC_ECONOMY;
+  } else if (label == "technology") {
+    Category = NC_TECHNOLOGY;
+  } else if (label == "sports") {
+    Category = NC_SPORTS;
+  } else if (label == "entertainment") {
+    Category = NC_ENTERTAINMENT;
+  } else if (label == "science") {
+    Category = NC_SCIENCE;
+  } else if (label == "other") {
+    Category = NC_OTHER;
+  } else if (label == "not_news") {
+    Category = NC_NOT_NEWS;
+  } else {
+    Category = NC_UNDEFINED;
+  }
+  return;
 }
 
 }

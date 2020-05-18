@@ -5,16 +5,18 @@
 #include <memory>
 
 #include "third_party/fastText/src/fasttext.h"
-//#include "onmt/Tokenizer.h"
+#include "third_party/onmt_tokenizer/include/onmt/Tokenizer.h"
 
 namespace tgnews {
 
 class Context {
  public:
   Context(const std::string modelPath, FileCache fileCache);
-  std::unique_ptr<fasttext::FastText> langDetect;
   FileCache fileCache;
-  //onmt::Tokenizer Tokenizer;
+  std::unique_ptr<fasttext::FastText> LangDetect;
+  std::unique_ptr<fasttext::FastText> RuCatModel;
+  std::unique_ptr<fasttext::FastText> EnCatModel;
+  onmt::Tokenizer Tokenizer;
 };
 
 }

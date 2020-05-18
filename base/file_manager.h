@@ -85,8 +85,8 @@ class FileManager {
     return it->second->deadline > now;
   }
 
-  std::vector<std::shared_ptr<const Document>> GetDocuments() {
-    std::vector<std::shared_ptr<const Document>> documents;
+  std::vector<DocumentConstPtr> GetDocuments() {
+    std::vector<DocumentConstPtr> documents;
     documents.reserve(document_by_name_.size());
     for (auto&[name, document_ptr] : document_by_name_) {
       documents.push_back(document_ptr);
