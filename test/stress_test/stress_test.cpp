@@ -1,6 +1,4 @@
 #include "server/server.h"
-#include "server/file_cache.h"
-#include "base/context.h"
 
 #include "gflags/gflags.h"
 #include "glog/logging.h"

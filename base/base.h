@@ -1,12 +1,15 @@
 #pragma once
 
-#include <stdexcept>
-
 #include "glog/logging.h"
+
+#include <stdexcept>
 
 namespace tgnews {
 
-void LogAndThrow(const std::string& error_message);
+inline void LogAndThrow(const std::string& error_message) {
+  LOG(ERROR) << error_message;
+  throw std::runtime_error(error_message);
+}
 
 #define VERIFY(EXP, ERROR) \
   if (!(EXP)) {            \

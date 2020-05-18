@@ -1,4 +1,5 @@
 #pragma once
+#include "base/file_cache.h"
 
 #include <string>
 #include <memory>
@@ -10,7 +11,8 @@ namespace tgnews {
 
 class Context {
  public:
-  Context(const std::string modelPath);
+  Context(const std::string modelPath, std::unique_ptr<FileCache> fileCache);
+  std::unique_ptr<FileCache> fileCache;
   std::unique_ptr<fasttext::FastText> LangDetect;
   std::unique_ptr<fasttext::FastText> RuCatModel;
   std::unique_ptr<fasttext::FastText> EnCatModel;

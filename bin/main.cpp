@@ -1,5 +1,5 @@
+#include "base/file_cache.h"
 #include "server/server.h"
-#include "server/file_cache.h"
 
 #include "base/context.h"
 #include "base/util.h"
@@ -29,9 +29,6 @@ int main(int argc, char** argv) {
 
   LOG(INFO) << fmt::format("Running mode - {}", mode);
 
-  tgnews::Context context(FLAGS_modelsPath);
-  tgnews::ResponseBuilder responseBuilder(std::move(context));
-
   if (mode == "server") {
     int port = std::stoi(argv[2]);
     auto file_manager = std::make_unique<tgnews::FileManager>();
@@ -39,6 +36,9 @@ int main(int argc, char** argv) {
     server.Run();
     return 0;
   }
+
+  tgnews::Context context(FLAGS_modelsPath, nullptr);
+  tgnews::ResponseBuilder responseBuilder(std::move(context));
 
   std::string content_dir = argv[2];
   auto docs = tgnews::MakeDocumentsFromDir(content_dir);
