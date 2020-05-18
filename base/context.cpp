@@ -1,7 +1,7 @@
 #include "base/context.h"
 namespace tgnews {
 
-Context::Context(const std::string modelPath, FileCache fileCache) 
+Context::Context(const std::string modelPath, std::unique_ptr<FileCache> fileCache)
   : fileCache(std::move(fileCache))
   , Tokenizer(onmt::Tokenizer::Mode::Conservative, onmt::Tokenizer::Flags::CaseFeature)
 {

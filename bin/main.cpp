@@ -1,12 +1,11 @@
-#include "server/server.h"
 #include "base/file_cache.h"
-#include "base/file_manager.h"
+#include "server/server.h"
 
 #include "base/context.h"
+#include "base/util.h"
 
 #include "solver/response_builder.h"
 
-#include "fmt/format.h"
 #include "gflags/gflags.h"
 #include "glog/logging.h"
 
@@ -38,20 +37,16 @@ int main(int argc, char** argv) {
     return 0;
   }
 
-  std::string content_dir = argv[2];
-  tgnews::FileManager file_manager(content_dir);
-  tgnews::FileCache file_cache(&file_manager);
-
-  auto docs = file_cache.GetDocuments();
-
-  tgnews::Context context(FLAGS_modelsPath, std::move(file_cache));
+  tgnews::Context context(FLAGS_modelsPath, nullptr);
   tgnews::ResponseBuilder responseBuilder(std::move(context));
 
+  std::string content_dir = argv[2];
+  auto docs = tgnews::MakeDocumentsFromDir(content_dir);
   LOG(INFO) << fmt::format("Docs size- {}", docs.size());
   if (mode == "languages") {
     std::cout << responseBuilder.AddDocuments(docs).LangAns;
   } else if (mode == "news") {
-    
+
   } else if (mode == "categories") {
 
   } else if (mode == "threads") {
