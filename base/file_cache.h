@@ -1,4 +1,7 @@
-#include "server/file_manager.h"
+#pragma once
+
+#include "base/document.h"
+#include "base/file_manager.h"
 
 namespace tgnews {
 

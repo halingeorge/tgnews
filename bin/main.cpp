@@ -1,11 +1,12 @@
 #include "server/server.h"
-#include "server/file_cache.h"
+#include "base/file_cache.h"
+#include "base/file_manager.h"
 
 #include "base/context.h"
-#include "base/util.h"
 
 #include "solver/response_builder.h"
 
+#include "fmt/format.h"
 #include "gflags/gflags.h"
 #include "glog/logging.h"
 
@@ -29,9 +30,6 @@ int main(int argc, char** argv) {
 
   LOG(INFO) << fmt::format("Running mode - {}", mode);
 
-  tgnews::Context context(FLAGS_modelsPath);
-  tgnews::ResponseBuilder responseBuilder(std::move(context));
-
   if (mode == "server") {
     int port = std::stoi(argv[2]);
     auto file_manager = std::make_unique<tgnews::FileManager>();
@@ -41,7 +39,14 @@ int main(int argc, char** argv) {
   }
 
   std::string content_dir = argv[2];
-  auto docs = tgnews::MakeDocumentsFromDir(content_dir);
+  tgnews::FileManager file_manager(content_dir);
+  tgnews::FileCache file_cache(&file_manager);
+
+  auto docs = file_cache.GetDocuments();
+
+  tgnews::Context context(FLAGS_modelsPath, std::move(file_cache));
+  tgnews::ResponseBuilder responseBuilder(std::move(context));
+
   LOG(INFO) << fmt::format("Docs size- {}", docs.size());
   if (mode == "languages") {
     std::cout << responseBuilder.AddDocuments(docs).LangAns;

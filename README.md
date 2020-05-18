@@ -6,6 +6,7 @@ sudo apt install libboost-all-dev
 git submodule update --init
 mkdir build
 cmake .. && make -j4
+bin/functional_test
 
 cmake .. && make -j4; bin/tgnews server 12345 —log_to_stderr  // запустить сервер на порту 12345 и выводить логи в stderr.
 

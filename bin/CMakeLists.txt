@@ -7,4 +7,4 @@ include_directories(third_party/glog)
 
 add_executable(tgnews main.cpp)
 
-target_link_libraries(tgnews server gflags glog solver base)
+target_link_libraries(tgnews server fmt gflags glog solver base)

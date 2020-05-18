@@ -1,4 +1,5 @@
 #pragma once
+#include "base/file_cache.h"
 
 #include <string>
 #include <memory>
@@ -10,8 +11,9 @@ namespace tgnews {
 
 class Context {
  public:
-  Context(const std::string modelPath);
+  Context(const std::string modelPath, FileCache fileCache);
   std::unique_ptr<fasttext::FastText> langDetect;
+  FileCache fileCache;
   //onmt::Tokenizer Tokenizer;
 };
 
