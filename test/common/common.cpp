@@ -104,6 +104,7 @@ std::vector<std::string> GetArticles(SimpleWeb::Client<SimpleWeb::HTTP>& client)
 
   auto articles = ConcatDocuments(ru_articles, en_articles);
 
+  std::sort(articles.begin(), articles.end());
   articles.resize(std::unique(articles.begin(), articles.end()) - articles.begin());
 
   return articles;
