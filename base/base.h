@@ -6,14 +6,10 @@
 
 namespace tgnews {
 
-inline void LogAndThrow(const std::string& error_message) {
-  LOG(ERROR) << error_message;
-  throw std::runtime_error(error_message);
-}
-
-#define VERIFY(EXP, ERROR) \
-  if (!(EXP)) {            \
-    LogAndThrow(ERROR);    \
+#define VERIFY(EXP, MSG)           \
+  if (!(EXP)) {                    \
+    LOG(ERROR) << MSG;             \
+    throw std::runtime_error(MSG); \
   }
 
 }  // namespace tgnews

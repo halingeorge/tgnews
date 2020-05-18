@@ -11,13 +11,12 @@
 
 #include <iostream>
 
-DEFINE_bool(log_to_stderr, false, " log to stderr?");
 DEFINE_string(modelsPath, "models", " subj");
 
 int main(int argc, char** argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, false);
 
-  FLAGS_logtostderr = FLAGS_log_to_stderr;
+  FLAGS_logtostderr = true;
 
   google::InitGoogleLogging(argv[0]);
 

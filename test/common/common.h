@@ -63,4 +63,8 @@ std::vector<std::string> GetArticles(SimpleWeb::Client<SimpleWeb::HTTP>& client)
 
 bool WaitForExactDocuments(SimpleWeb::Client<SimpleWeb::HTTP>& client, std::vector<std::string> names);
 
+bool WaitForSubsetDocuments(SimpleWeb::Client<SimpleWeb::HTTP>& client, std::vector<std::string> names);
+
+bool WaitForNoneDocuments(SimpleWeb::Client<SimpleWeb::HTTP>& client, std::vector<std::string> names);
+
 }  // namespace tgnews

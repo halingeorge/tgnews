@@ -5,10 +5,7 @@
 
 #include "third_party/simple_web_server/client_http.hpp"
 
-#include <boost/lexical_cast.hpp>
-
 #include "gtest/gtest.h"
-#include "gmock/gmock.h"
 
 #include <random>
 

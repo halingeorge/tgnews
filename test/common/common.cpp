@@ -40,15 +40,14 @@ std::string GetHeaderValue(const SimpleWeb::CaseInsensitiveMultimap& headers, st
 }
 
 std::vector<std::string> GetArticles(SimpleWeb::Client<SimpleWeb::HTTP>& client,
-                                     std::chrono::seconds period,
-                                     std::string_view lang_code,
-                                     std::string_view category) {
+                                  std::chrono::seconds period,
+                                  std::string_view lang_code,
+                                  std::string_view category) {
   auto response =
       client.request("GET",
                      fmt::format("/threads?period={0}&lang_code={1}&category={2}", period.count(), lang_code, category),
           /*content =*/ "");
 
-  std::vector<std::string> articles;
   EXPECT_EQ(response->status_code, "200 OK");
   EXPECT_EQ(GetHeaderValue(response->header, "Content-Type"), "application/json");
   EXPECT_GT(boost::lexical_cast<size_t>(GetHeaderValue(response->header, "Content-Length")), 0);
@@ -58,10 +57,10 @@ std::vector<std::string> GetArticles(SimpleWeb::Client<SimpleWeb::HTTP>& client,
   VERIFY(reader.parse(response->content.string(), value),
          fmt::format("error while reading articles: {}", reader.getFormattedErrorMessages()))
   LOG(INFO) << "articles: " << value.toStyledString();
+  std::vector<std::string> articles;
   for (const auto& article : value["articles"]) {
     articles.push_back(article.asString());
   }
-
   return articles;
 }
 
@@ -105,7 +104,6 @@ std::vector<std::string> GetArticles(SimpleWeb::Client<SimpleWeb::HTTP>& client)
 
   auto articles = ConcatDocuments(ru_articles, en_articles);
 
-  std::sort(articles.begin(), articles.end());
   articles.resize(std::unique(articles.begin(), articles.end()) - articles.begin());
 
   return articles;
@@ -117,6 +115,46 @@ bool WaitForExactDocuments(SimpleWeb::Client<SimpleWeb::HTTP>& client, std::vect
     auto articles = GetArticles(client);
     if (articles.size() == names.size()) {
       EXPECT_THAT(articles, UnorderedElementsAreArray(names));
+      return true;
+    }
+    std::this_thread::sleep_for(1s);
+  }
+  return false;
+}
+
+bool WaitForSubsetDocuments(SimpleWeb::Client<SimpleWeb::HTTP>& client, std::vector<std::string> names) {
+  auto deadline = Deadline(5s);
+  while (Now() < deadline) {
+    auto articles = GetArticles(client);
+    bool success = true;
+    for (const auto& name : names) {
+      auto it = std::lower_bound(articles.begin(), articles.end(), name);
+      if (it == articles.end()) {
+        success = false;
+        break;
+      }
+    }
+    if (success) {
+      return true;
+    }
+    std::this_thread::sleep_for(1s);
+  }
+  return false;
+}
+
+bool WaitForNoneDocuments(SimpleWeb::Client<SimpleWeb::HTTP>& client, std::vector<std::string> names) {
+  auto deadline = Deadline(5s);
+  while (Now() < deadline) {
+    auto articles = GetArticles(client);
+    bool success = true;
+    for (const auto& name : names) {
+      auto it = std::lower_bound(articles.begin(), articles.end(), name);
+      if (it != articles.end()) {
+        success = false;
+        break;
+      }
+    }
+    if (success) {
       return true;
     }
     std::this_thread::sleep_for(1s);

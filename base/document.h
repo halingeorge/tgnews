@@ -7,7 +7,6 @@
 
 namespace tgnews {
 
-
 class Document {
  public:
   enum class State {
@@ -17,7 +16,7 @@ class Document {
   };
 
  public:
-  Document(std::string name, std::string content, uint64_t deadline, State state);
+  Document(std::string name, std::string content, uint64_t deadline = 0, State state = State::Added);
 
  public:
   std::string name;
