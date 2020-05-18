@@ -11,7 +11,7 @@ class FileCache {
     return file_manager_->IsFileStillAlive(filename);
   }
 
-  std::vector<Document*> GetDocuments() {
+  std::vector<std::shared_ptr<const Document>> GetDocuments() {
     return file_manager_->GetDocuments();
   }
 
