@@ -1,6 +1,7 @@
 #include "parsed_document.h"
 #include "run_fasttext.h"
 
+#include <boost/algorithm/string/join.hpp>
 #include <third_party/tinyxml2/tinyxml2.h>
 
 #include <stdexcept>
@@ -129,6 +130,17 @@ void ParsedDoc::ParseLang(const fasttext::FastText* model) {
   } else {
     Lang = label;
   }
+}
+
+static std::string Preprocess(const std::string& text, const onmt::Tokenizer& tokenizer) {
+  std::vector<std::string> tokens;
+  tokenizer.tokenize(text, tokens);
+  return boost::join(tokens, " ");
+}
+
+void ParsedDoc::Tokenize(const tgnews::Context& context) {
+  GoodTitle = Preprocess(Title, context.Tokenizer);
+  GoodText = Preprocess(Text, context.Tokenizer);
 }
 
 }

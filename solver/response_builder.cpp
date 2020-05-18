@@ -45,6 +45,10 @@ CalculatedResponses ResponseBuilder::AddDocuments(const std::vector<std::unique_
     doc.ParseLang(Context.langDetect.get());
   }
 
+  for (auto& doc : Docs) {
+    doc.Tokenize(Context);
+  }
+
   return {Docs};
 }
 
