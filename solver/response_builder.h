@@ -18,7 +18,7 @@ class CalculatedResponses {
 class ResponseBuilder {
  public:
   ResponseBuilder(tgnews::Context context);
-  CalculatedResponses AddDocuments(const std::vector<tgnews::Document*>& docs);
+  CalculatedResponses AddDocuments(const std::vector<std::shared_ptr<const tgnews::Document>>& docs);
  private:
 
   std::vector<tgnews::ParsedDoc> Docs;

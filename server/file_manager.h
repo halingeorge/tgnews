@@ -43,6 +43,7 @@ class FileManager {
 
       document->content = std::move(content);
       document->deadline = deadline;
+      document->state = Document::State::Changed;
 
       documents_with_deadline_.emplace(document->deadline, document);
 
@@ -57,17 +58,11 @@ class FileManager {
   }
 
   bool RemoveFile(std::string_view filename) {
-    LOG(INFO) << "removing file: " << filename;
     auto it = document_by_name_.find(filename.data());
     if (it == document_by_name_.end()) {
       return false;
     }
-    LOG(INFO) << "content dir: " << content_dir_;
-    LOG(INFO) << "name: " << it->second->name;
-    boost::filesystem::path filepath = fmt::format("{0}/{1}", content_dir_, it->second->name);
-    RemoveFileFromDisk(filepath);
-    documents_with_deadline_.erase({it->second->deadline, it->second.get()});
-    document_by_name_.erase(it);
+    RemoveFileImpl(it->second->name);
     return true;
   }
 
@@ -78,42 +73,31 @@ class FileManager {
       if (it->first > now) {
         break;
       }
-
-      LOG(INFO) << "file is outdated: " << it->second->name;
-
-      boost::filesystem::path filepath = fmt::format("{0}/{1}", content_dir_, it->second->name);
-
-      RemoveFileFromDisk(filepath);
-
-      document_by_name_.erase(it->second->name);
-      documents_with_deadline_.erase(it);
+      RemoveFileImpl(it->second->name);
     }
   }
 
   bool IsFileStillAlive(std::string_view filename) {
-    auto now = std::chrono::time_point<std::chrono::seconds>().time_since_epoch().count();
-
+    auto now = NowCount();
     auto it = document_by_name_.find(filename.data());
-
     VERIFY(it != document_by_name_.end(), fmt::format("no file found for aliveness check: {0}", filename));
-
     LOG(INFO) << "file still alive: " << filename;
-
     return it->second->deadline > now;
   }
 
-  std::vector<Document*> GetDocuments() {
-    std::vector<Document*> documents;
+  std::vector<std::shared_ptr<const Document>> GetDocuments() {
+    std::vector<std::shared_ptr<const Document>> documents;
     documents.reserve(document_by_name_.size());
     for (auto&[name, document_ptr] : document_by_name_) {
-      documents.push_back(document_ptr.get());
+      documents.push_back(document_ptr);
     }
     return documents;
   }
 
  private:
   Document& CreateDocument(std::string filename, std::string content, uint64_t deadline) {
-    auto document_ptr = std::make_unique<Document>(std::move(filename), std::move(content), deadline);
+    auto document_ptr =
+        std::make_unique<Document>(std::move(filename), std::move(content), deadline, Document::State::Added);
 
     auto address = document_ptr.get();
 
@@ -168,6 +152,19 @@ class FileManager {
     LOG(INFO) << "restored file count: " << document_by_name_.size();
   }
 
+  void RemoveFileImpl(std::string_view filename) {
+    auto it = document_by_name_.find(filename.data());
+    VERIFY(it != document_by_name_.end(), "file has to exist in RemoveFileImpl");
+
+    boost::filesystem::path filepath = fmt::format("{0}/{1}", content_dir_, it->second->name);
+
+    RemoveFileFromDisk(filepath);
+
+    it->second->state = Document::State::Removed;
+    documents_with_deadline_.erase({it->second->deadline, it->second.get()});
+    document_by_name_.erase(it);
+  }
+
   static void RemoveFileFromDisk(const boost::filesystem::path& filepath) {
     LOG(INFO) << fmt::format("removing file from disk: {0}", filepath.string());
     VERIFY(boost::filesystem::remove(filepath), fmt::format("no file found: {0}", filepath.string()));
@@ -175,7 +172,7 @@ class FileManager {
 
  private:
   std::string content_dir_;
-  std::unordered_map<std::string, std::unique_ptr<Document>> document_by_name_;
+  std::unordered_map<std::string, std::shared_ptr<Document>> document_by_name_;
   std::set<std::pair<uint64_t, Document*>> documents_with_deadline_;
 };
 
