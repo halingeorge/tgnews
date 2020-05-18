@@ -7,6 +7,6 @@ file(GLOB_RECURSE SRCS *.cpp *.h)
 include_directories(third_party)
 include_directories(third_party/jsoncpp/include)
 
-add_library(solver ${SRCS})
+add_library(solver STATIC ${SRCS})
 
 target_link_libraries(solver jsoncpp_lib tinyxml2)

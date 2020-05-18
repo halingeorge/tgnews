@@ -18,6 +18,6 @@ int main(int argc, char** argv) {
   FLAGS_logtostderr = FLAGS_log_to_stderr;
 
   google::InitGoogleLogging(argv[0]);
-  
+
   return 0;
 }
