@@ -9,7 +9,6 @@ CalculatedResponses::CalculatedResponses(const std::vector<tgnews::ParsedDoc>& d
   int idx = 0;
   for (const auto& lang : {"en", "ru"}) {
     Ans[idx]["lang_code"] = lang;
-    ++idx;
     int docidx = 0;
     for (const auto& doc : docs) {
       if (doc.Lang == lang) {
@@ -17,6 +16,7 @@ CalculatedResponses::CalculatedResponses(const std::vector<tgnews::ParsedDoc>& d
         ++docidx;
       }
     }
+    ++idx;
   }
 }
 
