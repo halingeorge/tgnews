@@ -28,7 +28,7 @@ Json::Value CalcNewsAns(const std::vector<tgnews::ParsedDoc>& docs) {
   Json::Value articles;  
   for (const auto& doc : docs) {
     if (doc.Category != ENewsCategory::NC_NOT_NEWS && doc.Category != ENewsCategory::NC_UNDEFINED && doc.Category != ENewsCategory::NC_OTHER) {
-      articles.append(doc.FileName);
+      articles.append(doc.FileName + *doc.Lang);
     }
   }
   Json::Value result;
