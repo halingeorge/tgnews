@@ -13,8 +13,11 @@ class CalculatedResponses {
  public:
   CalculatedResponses(const std::vector<tgnews::ParsedDoc>& docs);
   Json::Value GetAns(const std::string& lang = {}, const std::string& category = {}, const uint64_t period = 0);
- private:
-  Json::Value Ans;
+ public:
+  Json::Value LangAns;
+  Json::Value NewsAns;
+  Json::Value CategoriesAns;
+  Json::Value ThreadsAns;
 };
 
 class ResponseBuilder {

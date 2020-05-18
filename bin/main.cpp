@@ -41,11 +41,11 @@ int main(int argc, char** argv) {
 
   std::string content_dir = argv[2];
   auto docs = tgnews::MakeDocumentsFromDir(content_dir);
-  std::cerr << fmt::format("Docs size- {}", docs.size());
+  LOG(INFO) << fmt::format("Docs size- {}", docs.size());
   if (mode == "languages") {
-    std::cout << responseBuilder.AddDocuments(docs).GetAns();
+    std::cout << responseBuilder.AddDocuments(docs).LangAns;
   } else if (mode == "news") {
-
+    
   } else if (mode == "categories") {
 
   } else if (mode == "threads") {

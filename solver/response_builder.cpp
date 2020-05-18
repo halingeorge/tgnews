@@ -3,25 +3,35 @@
 #include <vector>
 #include <string>
 
-namespace tgnews {
+namespace {
 
-CalculatedResponses::CalculatedResponses(const std::vector<tgnews::ParsedDoc>& docs) {
+Json::Value CalcLangAns(const std::vector<tgnews::ParsedDoc>& docs) {
+  Json::Value result;
   int idx = 0;
   for (const auto& lang : {"en", "ru"}) {
-    Ans[idx]["lang_code"] = lang;
+    result[idx]["lang_code"] = lang;
     int docidx = 0;
     for (const auto& doc : docs) {
       if (doc.Lang == lang) {
-        Ans[idx]["articles"][docidx] = doc.FileName;
+        result[idx]["articles"][docidx] = doc.FileName;
         ++docidx;
       }
     }
     ++idx;
   }
+  return result;
+}
+
+}
+
+namespace tgnews {
+
+CalculatedResponses::CalculatedResponses(const std::vector<tgnews::ParsedDoc>& docs) {
+  LangAns = CalcLangAns(docs);
 }
 
 Json::Value CalculatedResponses::GetAns(const std::string& lang, const std::string& category, const uint64_t period) {
-  return Ans;
+  return Json::Value{};
 }
 
 ResponseBuilder::ResponseBuilder(tgnews::Context context) : Context(std::move(context)) {}
