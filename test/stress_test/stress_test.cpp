@@ -1,18 +1,15 @@
+#include <chrono>
+#include <thread>
+#include <vector>
+
 #include "base/document.h"
-#include "base/util.h"
 #include "base/time_helpers.h"
-
-#include "test/common/common.h"
-
+#include "base/util.h"
+#include "fmt/format.h"
 #include "gflags/gflags.h"
 #include "glog/logging.h"
-#include "fmt/format.h"
-
+#include "test/common/common.h"
 #include "third_party/simple_web_server/client_http.hpp"
-
-#include <chrono>
-#include <vector>
-#include <thread>
 
 DEFINE_string(server_hostname, "localhost", "server hostname");
 DEFINE_int32(server_port, 12345, "server port");
@@ -25,9 +22,9 @@ using namespace tgnews;
 
 namespace {
 
-std::vector<TestDocument> GetWorkerDocuments(std::vector<TestDocument>& documents,
-                                                 size_t worker_id,
-                                                 size_t thread_count) {
+std::vector<TestDocument> GetWorkerDocuments(
+    std::vector<TestDocument>& documents, size_t worker_id,
+    size_t thread_count) {
   std::vector<TestDocument> worker_documents;
   for (size_t i = worker_id; i < documents.size(); i += thread_count) {
     worker_documents.push_back(std::move(documents[i]));
@@ -39,12 +36,12 @@ std::vector<TestDocument> GetWorkerDocuments(std::vector<TestDocument>& document
 
 class Worker {
  public:
-  Worker(std::vector<TestDocument> documents)
-      : deadline_(Deadline(std::chrono::seconds(FLAGS_shooting_time))), documents_(std::move(documents)),
-        client_(std::make_unique<SimpleWeb::Client<SimpleWeb::HTTP>>(fmt::format("{}:{}",
-                                                                                 FLAGS_server_hostname,
-                                                                                 FLAGS_server_port))) {
-  }
+  Worker(std::vector<TestDocument> documents, Stats& stats)
+      : deadline_(Deadline(std::chrono::seconds(FLAGS_shooting_time))),
+        documents_(std::move(documents)),
+        client_(std::make_unique<SimpleWeb::Client<SimpleWeb::HTTP>>(
+            fmt::format("{}:{}", FLAGS_server_hostname, FLAGS_server_port))),
+        stats_(stats) {}
 
   void Run() {
     while (Now() < deadline_) {
@@ -55,27 +52,57 @@ class Worker {
  private:
   void DoIteration() {
     for (auto document : documents_) {
-      PutRequest(*client_, document.name, document.content, document.max_age);
+      MakeRequest([&] {
+        PutRequest(*client_, document.name, document.content, document.max_age);
+      });
     }
+    MakeRequest([&] {
+      GetArticles(*client_);
+    });
     WaitForSubsetDocuments(*client_, GetDocumentNames(documents_));
     for (auto document : documents_) {
-      PutRequest(*client_, document.name, document.content, document.max_age, "204 Created");
+      MakeRequest([&] {
+        PutRequest(*client_, document.name, document.content, document.max_age,
+                   "204 Created");
+      });
     }
+    MakeRequest([&] {
+      GetArticles(*client_);
+    });
     WaitForSubsetDocuments(*client_, GetDocumentNames(documents_));
     for (auto document : documents_) {
-      DeleteRequest(*client_, document.name);
+      MakeRequest([&] {
+        DeleteRequest(*client_, document.name);
+      });
     }
-    WaitForNoneDocuments(*client_, GetDocumentNames(documents_));
+    MakeRequest([&] {
+      GetArticles(*client_);
+    });
+    WaitForSubsetDocuments(*client_, GetDocumentNames(documents_));
     for (auto document : documents_) {
-      DeleteRequest(*client_, document.name, "404 Not Found");
+      MakeRequest([&] {
+        DeleteRequest(*client_, document.name, "404 No Content");
+      });
     }
-    WaitForNoneDocuments(*client_, GetDocumentNames(documents_));
+    MakeRequest([&] {
+      GetArticles(*client_);
+    });
+    WaitForSubsetDocuments(*client_, GetDocumentNames(documents_));
+  }
+
+  template <typename F>
+  void MakeRequest(F&& f) {
+    Stats::State state;
+    stats_.OnStart();
+    f();
+    stats_.OnFinish(state);
   }
 
  private:
   std::chrono::system_clock::time_point deadline_;
   std::vector<TestDocument> documents_;
   std::unique_ptr<SimpleWeb::Client<SimpleWeb::HTTP>> client_;
+  Stats& stats_;
 };
 
 int main(int argc, char** argv) {
@@ -86,23 +113,26 @@ int main(int argc, char** argv) {
   google::InitGoogleLogging(argv[0]);
 
   std::vector<TestDocument> documents;
-  for (auto document : MakeDocumentsFromDir(FLAGS_content_path)) {
-    documents.push_back(TestDocument(document->name, document->content, std::chrono::seconds(60)));
+  for (const auto& document : MakeDocumentsFromDir(FLAGS_content_path)) {
+    documents.push_back(TestDocument(document->name, document->content,
+                                     std::chrono::seconds(60)));
   }
   LOG(INFO) << "document count: " << documents.size();
 
   std::vector<std::thread> workers;
 
+  Stats stats;
+
   size_t thread_count = FLAGS_thread_count;
   for (size_t worker_id = 0; worker_id < thread_count; worker_id++) {
-    auto work = [&] {
-      Worker worker(GetWorkerDocuments(documents, worker_id, thread_count));
+    auto work = [&](auto id) {
+      Worker worker(GetWorkerDocuments(documents, id, thread_count), stats);
       worker.Run();
     };
     if (worker_id + 1 == thread_count) {
-      work();
+      work(worker_id);
     } else {
-      workers.emplace_back(std::move(work));
+      workers.emplace_back(std::move(work), worker_id);
     }
   }
 
