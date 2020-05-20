@@ -18,6 +18,8 @@
 #include <vector>
 #include <set>
 
+#include <experimental/thread_pool>
+
 #include <boost/filesystem.hpp>
 #include <boost/range/iterator_range.hpp>
 
@@ -86,6 +88,9 @@ class FileManager {
   }
 
   std::vector<DocumentConstPtr> GetDocuments() {
+    std::experimental::post(pool_, [] {
+      LOG(ERROR) << "getting documents";
+    });
     std::vector<DocumentConstPtr> documents;
     documents.reserve(document_by_name_.size());
     for (auto&[name, document_ptr] : document_by_name_) {
@@ -174,6 +179,7 @@ class FileManager {
   std::string content_dir_;
   std::unordered_map<std::string, std::shared_ptr<Document>> document_by_name_;
   std::set<std::pair<uint64_t, Document*>> documents_with_deadline_;
+  std::experimental::thread_pool pool_;
 };
 
 }  // namespace tgnews

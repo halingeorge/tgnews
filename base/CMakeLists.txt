@@ -11,9 +11,11 @@ include_directories(third_party/fastText)
 include_directories(third_party/onmt_tokenizer/include)
 include_directories(third_party/jsoncpp/include)
 include_directories(third_party/eigen)
+include_directories(third_party/executors/include)
 
 add_library(base STATIC ${SRCS})
 
 find_package(Boost COMPONENTS filesystem REQUIRED)
 
-target_link_libraries(base glog gflags eigen fasttext-static OpenNMTTokenizer jsoncpp_lib fmt ${Boost_FILESYSTEM_LIBRARY})
+target_link_libraries(base executors_lib glog gflags eigen fasttext-static OpenNMTTokenizer jsoncpp_lib fmt ${Boost_FILESYSTEM_LIBRARY})
+add_dependencies(base executors)
