@@ -38,14 +38,13 @@ class ParsedDoc {
   std::string Text;
   std::string Author;
 
-  std::string GoodTitle;
-  std::string GoodText;
-
   uint64_t PubTime = 0;
   uint64_t FetchTime = 0;
 
   std::vector<std::string> OutLinks;
  public:
+  std::string GoodTitle;
+  std::string GoodText;
   std::string FileName;
   std::optional<std::string> Lang;
   ENewsCategory Category = NC_UNDEFINED;
