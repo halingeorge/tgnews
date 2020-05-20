@@ -1,3 +1,4 @@
+#pragma once 
 #include "base/document.h"
 #include "base/context.h"
 
@@ -31,7 +32,6 @@ class ParsedDoc {
   void DetectCategory(const tgnews::Context& context);
 
  private:
-  std::string Title;
   std::string Url;
   std::string SiteName;
   std::string Description;
@@ -43,11 +43,13 @@ class ParsedDoc {
 
   std::vector<std::string> OutLinks;
  public:
+  std::string Title;
   std::string GoodTitle;
   std::string GoodText;
   std::string FileName;
   std::optional<std::string> Lang;
   ENewsCategory Category = NC_UNDEFINED;
+  fasttext::Vector Vector = fasttext::Vector(50);
 };
 
 }

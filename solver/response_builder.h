@@ -1,4 +1,5 @@
 #include "parsed_document.h"
+#include "cluster.h"
 
 #include "base/context.h"
 #include "base/document.h"
@@ -11,7 +12,7 @@ namespace tgnews {
 
 class CalculatedResponses {
  public:
-  CalculatedResponses(const std::vector<tgnews::ParsedDoc>& docs);
+  CalculatedResponses(const std::vector<tgnews::ParsedDoc>& docs, const std::vector<Cluster>& clustering);
   Json::Value GetAns(const std::string& lang = {}, const std::string& category = {}, const uint64_t period = 0);
  public:
   Json::Value LangAns;

@@ -12,6 +12,7 @@
 #include <iostream>
 
 DEFINE_string(modelsPath, "models", " subj");
+DEFINE_int32(docsCount, -1, "how much docs to read, -1 to read all");
 
 int main(int argc, char** argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, false);
@@ -40,8 +41,8 @@ int main(int argc, char** argv) {
   tgnews::ResponseBuilder responseBuilder(std::move(context));
 
   std::string content_dir = argv[2];
-  auto docs = tgnews::MakeDocumentsFromDir(content_dir);
-  LOG(INFO) << fmt::format("Docs size- {}", docs.size());
+  auto docs = tgnews::MakeDocumentsFromDir(content_dir, FLAGS_docsCount);
+  LOG(INFO) << fmt::format("Docs size - {}", docs.size());
   if (mode == "languages") {
     std::cout << responseBuilder.AddDocuments(docs).LangAns;
   } else if (mode == "news") {
@@ -49,7 +50,7 @@ int main(int argc, char** argv) {
   } else if (mode == "categories") {
     std::cout << responseBuilder.AddDocuments(docs).CategoryAns;
   } else if (mode == "threads") {
-
+    std::cout << responseBuilder.AddDocuments(docs).ThreadsAns;
   }
   return 0;
 }
