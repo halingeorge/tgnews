@@ -3,6 +3,8 @@
 #include <cstdint>
 
 #include "base/file_manager.h"
+#include "server/stats.h"
+
 #include "server_http.hpp"
 
 namespace tgnews {
@@ -28,6 +30,7 @@ class Server {
   uint32_t port_;
   std::unique_ptr<FileManager> file_manager_;
   SimpleWeb::Server<SimpleWeb::HTTP> server_;
+  Stats stats_;
 };
 
 }  // namespace tgnews

@@ -16,7 +16,7 @@ DEFINE_string(modelsPath, "models", " subj");
 int main(int argc, char** argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, false);
 
-  FLAGS_logtostderr = true;
+  FLAGS_minloglevel = 1;
 
   google::InitGoogleLogging(argv[0]);
 
