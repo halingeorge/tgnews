@@ -25,3 +25,6 @@
 [submodule "third_party/onmt_tokenizer"]
 	path = third_party/onmt_tokenizer
 	url = https://github.com/OpenNMT/Tokenizer.git
+[submodule "third_party/eigen"]
+	path = third_party/eigen
+	url = https://github.com/eigenteam/eigen-git-mirror.git
