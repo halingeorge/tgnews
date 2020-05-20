@@ -28,3 +28,6 @@
 [submodule "third_party/eigen"]
 	path = third_party/eigen
 	url = https://github.com/eigenteam/eigen-git-mirror.git
+[submodule "third_party/executors"]
+	path = third_party/executors
+	url = https://github.com/chriskohlhoff/executors.git
