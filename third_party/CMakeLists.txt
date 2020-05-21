@@ -5,7 +5,8 @@ SET(BUILD_TESTING OFF)
 include(ExternalProject)
 ExternalProject_Add(executors
         SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/executors
-        CONFIGURE_COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/executors/configure --prefix=<INSTALL_DIR> --enable-static=yes --disable-shared
+        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/executors/autogen.sh
+        CONFIGURE_COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/executors/configure --prefix=<INSTALL_DIR>
         BUILD_COMMAND ${MAKE}
         INSTALL_COMMAND make install)
 
