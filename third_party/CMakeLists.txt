@@ -6,6 +6,7 @@ include(ExternalProject)
 install(SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/executors/autogen.sh)
 ExternalProject_Add(executors
         SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/executors
+        PATCH_COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/executors/autogen.sh
         CONFIGURE_COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/executors/configure --prefix=<INSTALL_DIR>
         BUILD_COMMAND ${MAKE}
         INSTALL_COMMAND make install)
