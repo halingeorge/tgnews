@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.15)
 
 SET(BUILD_TESTING OFF)
 
+SET(function2_DIR third_party/function2)
+
 include(ExternalProject)
 install(SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/executors/autogen.sh)
 ExternalProject_Add(executors
@@ -11,14 +13,14 @@ ExternalProject_Add(executors
         BUILD_COMMAND ${MAKE}
         INSTALL_COMMAND make install)
 
-SET(EXECUTORS_LIB_DIR third_party/executors/src)
-
 add_library(executors_lib INTERFACE)
 
 add_dependencies(executors_lib executors)
 
 set_target_properties(executors_lib PROPERTIES INTERFACE_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/executors/include)
 
+add_subdirectory(function2)
+add_subdirectory(continuable)
 add_subdirectory(fmt)
 add_subdirectory(eigen)
 add_subdirectory(tinyxml2)

@@ -31,3 +31,9 @@
 [submodule "third_party/executors"]
 	path = third_party/executors
 	url = https://github.com/chriskohlhoff/executors.git
+[submodule "third_party/continuable"]
+	path = third_party/continuable
+	url = https://github.com/Naios/continuable.git
+[submodule "third_party/function2"]
+	path = third_party/function2
+	url = https://github.com/Naios/function2.git
