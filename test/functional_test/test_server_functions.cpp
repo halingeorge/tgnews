@@ -1,13 +1,10 @@
-#include "test/common/common.h"
+#include <random>
 
 #include "base/time_helpers.h"
-#include "server/server.h"
-
-#include "third_party/simple_web_server/client_http.hpp"
-
 #include "gtest/gtest.h"
-
-#include <random>
+#include "server/server.h"
+#include "test/common/common.h"
+#include "third_party/simple_web_server/client_http.hpp"
 
 using namespace tgnews;
 using namespace std::chrono_literals;
@@ -27,19 +24,20 @@ class ServerTest : public Test {
 
     boost::filesystem::path content_path = kContentDir;
     if (boost::filesystem::exists(content_path)) {
-      LOG_IF(FATAL, !boost::filesystem::remove_all(content_path)) << "unable to remove content dir: " << kContentDir;
+      LOG_IF(FATAL, !boost::filesystem::remove_all(content_path))
+          << "unable to remove content dir: " << kContentDir;
     }
     LOG_IF(FATAL, !boost::filesystem::create_directory(content_path))
-            << "unable to create content dir: " << kContentDir;
-    server = std::make_unique<Server>(kPort, std::make_unique<FileManager>(kContentDir));
+        << "unable to create content dir: " << kContentDir;
+    server = std::make_unique<Server>(
+        kPort, std::make_unique<FileManager>(pool_, kContentDir), pool_);
 
-    server_thread_ = std::make_unique<std::thread>([&]() {
-      server->Run();
-    });
+    server_thread_ = std::make_unique<std::thread>([&]() { server->Run(); });
 
     std::this_thread::sleep_for(1s);
 
-    client = std::make_unique<SimpleWeb::Client<SimpleWeb::HTTP>>(fmt::format("localhost:{0}", kPort));
+    client = std::make_unique<SimpleWeb::Client<SimpleWeb::HTTP>>(
+        fmt::format("localhost:{0}", kPort));
   }
 
   ~ServerTest() {
@@ -48,8 +46,10 @@ class ServerTest : public Test {
     server_thread_->join();
 
     boost::filesystem::path content_path = kContentDir;
-    LOG_IF(FATAL, !boost::filesystem::remove_all(content_path)) << "unable to remove content dir: " << kContentDir;
-    LOG_IF(FATAL, boost::filesystem::exists(content_path)) << "path still exists: " << kContentDir;
+    LOG_IF(FATAL, !boost::filesystem::remove_all(content_path))
+        << "unable to remove content dir: " << kContentDir;
+    LOG_IF(FATAL, boost::filesystem::exists(content_path))
+        << "path still exists: " << kContentDir;
   }
 
   std::unique_ptr<Server> server;
@@ -60,13 +60,15 @@ class ServerTest : public Test {
 
  private:
   std::unique_ptr<std::thread> server_thread_;
+  std::experimental::thread_pool pool_{1};
 };
 
 TEST_F(ServerTest, TestDeleteNonexistent) {
   static constexpr size_t kAddDocuments = 10;
   static constexpr size_t kRemoveDocuments = 6;
 
-  SimpleWeb::Client<SimpleWeb::HTTP> client(fmt::format("localhost:{0}", kPort));
+  SimpleWeb::Client<SimpleWeb::HTTP> client(
+      fmt::format("localhost:{0}", kPort));
 
   DeleteRequest(client, "nonexistent_document", "404 No Content");
 }
@@ -75,7 +77,7 @@ TEST_F(ServerTest, TestPutAndRemoveDocuments) {
   static constexpr size_t kAddDocuments = 10;
   static constexpr size_t kRemoveDocuments = 6;
 
-  auto documents = GenerateDocuments(mt, /*count =*/ kAddDocuments);
+  auto documents = GenerateDocuments(mt, /*count =*/kAddDocuments);
   for (auto& document : documents) {
     PutRequest(*client, document.name, document.content, document.max_age);
   }
@@ -87,15 +89,16 @@ TEST_F(ServerTest, TestPutAndRemoveDocuments) {
     DeleteRequest(*client, documents[i].name);
   }
 
-  EXPECT_TRUE(WaitForExactDocuments(*client,
-                                    GetDocumentNames({documents.begin() + kRemoveDocuments, documents.end()})));
+  EXPECT_TRUE(WaitForExactDocuments(
+      *client, GetDocumentNames(
+                   {documents.begin() + kRemoveDocuments, documents.end()})));
 }
 
 TEST_F(ServerTest, TestPutAndUpdateDocument) {
   static constexpr size_t kAddDocuments = 10;
   static constexpr size_t kRemoveDocuments = 6;
 
-  auto documents = GenerateDocuments(mt, /*count =*/ kAddDocuments);
+  auto documents = GenerateDocuments(mt, /*count =*/kAddDocuments);
   for (auto& document : documents) {
     PutRequest(*client, document.name, document.content, document.max_age);
   }
@@ -109,11 +112,13 @@ TEST_F(ServerTest, TestPutAndUpdateDocument) {
   }
   for (size_t i = kRemoveDocuments; i < documents.size(); i++) {
     auto& document = documents[i];
-    PutRequest(*client, document.name, document.content, document.max_age, "204 Created");
+    PutRequest(*client, document.name, document.content, document.max_age,
+               "204 Created");
   }
 
-  EXPECT_TRUE(WaitForExactDocuments(*client,
-                                    GetDocumentNames({documents.begin() + kRemoveDocuments, documents.end()})));
+  EXPECT_TRUE(WaitForExactDocuments(
+      *client, GetDocumentNames(
+                   {documents.begin() + kRemoveDocuments, documents.end()})));
 }
 
 TEST_F(ServerTest, TestDocumentsDeadline) {
@@ -129,9 +134,13 @@ TEST_F(ServerTest, TestDocumentsDeadline) {
     PutRequest(*client, document.name, document.content, document.max_age);
   }
 
-  EXPECT_TRUE(WaitForExactDocuments(*client, GetDocumentNames(ConcatDocuments(documents3, documents6, documents9))));
-  EXPECT_TRUE(WaitForExactDocuments(*client, GetDocumentNames(ConcatDocuments(documents6, documents9))));
-  EXPECT_TRUE(WaitForExactDocuments(*client, GetDocumentNames(ConcatDocuments(documents9))));
+  EXPECT_TRUE(WaitForExactDocuments(
+      *client,
+      GetDocumentNames(ConcatDocuments(documents3, documents6, documents9))));
+  EXPECT_TRUE(WaitForExactDocuments(
+      *client, GetDocumentNames(ConcatDocuments(documents6, documents9))));
+  EXPECT_TRUE(WaitForExactDocuments(
+      *client, GetDocumentNames(ConcatDocuments(documents9))));
 }
 
 TEST_F(ServerTest, TestUpdateDeadline) {
@@ -139,7 +148,8 @@ TEST_F(ServerTest, TestUpdateDeadline) {
   PutRequest(*client, document.name, document.content, document.max_age);
   EXPECT_TRUE(WaitForExactDocuments(*client, {document.name}));
   document.max_age = 6s;
-  PutRequest(*client, document.name, document.content, document.max_age, "204 Created");
+  PutRequest(*client, document.name, document.content, document.max_age,
+             "204 Created");
   EXPECT_TRUE(!WaitForExactDocuments(*client, {}));
   EXPECT_TRUE(WaitForExactDocuments(*client, {}));
 }
