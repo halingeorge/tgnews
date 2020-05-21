@@ -1,8 +1,9 @@
 #include "response_builder.h"
+#include "embedder.h"
 
 #include <vector>
 #include <string>
-
+#include <chrono>
 namespace {
 
 using namespace tgnews;
@@ -91,14 +92,30 @@ Json::Value CalcCategoryAns(const std::vector<tgnews::ParsedDoc>& docs) {
   return result;
 }
 
+Json::Value CalcThreadsAns(const std::vector<Cluster>& clusters) {
+  Json::Value threads;
+  for (const auto& c : clusters) {
+    Json::Value thread;
+    thread["title"] = c.GetTitle();
+    Json::Value articles;
+    for (const auto& d : c.GetDocs()) {
+      articles.append(d.FileName);
+    }
+    thread["articles"] = std::move(articles);
+    threads.append(thread);
+  }
+  return threads;
+}
+
 }
 
 namespace tgnews {
 
-CalculatedResponses::CalculatedResponses(const std::vector<tgnews::ParsedDoc>& docs) {
+CalculatedResponses::CalculatedResponses(const std::vector<tgnews::ParsedDoc>& docs, const std::vector<Cluster>& clustering) {
   LangAns = CalcLangAns(docs);
   NewsAns = CalcNewsAns(docs);
   CategoryAns = CalcCategoryAns(docs);
+  ThreadsAns = CalcThreadsAns(clustering);
 }
 
 Json::Value CalculatedResponses::GetAns(const std::string& lang, const std::string& category, const uint64_t period) {
@@ -111,14 +128,27 @@ CalculatedResponses ResponseBuilder::AddDocuments(const std::vector<DocumentCons
   for (const auto& doc : docs) {
     Docs.emplace_back(*doc);
   }
-
-  for (auto& doc : Docs) {
-    doc.ParseLang(Context.LangDetect.get());
-    doc.Tokenize(Context);
-    doc.DetectCategory(Context);
+  {
+    for (auto& doc : Docs) {
+      doc.ParseLang(Context.LangDetect.get());
+      doc.Tokenize(Context);
+      doc.DetectCategory(Context);
+    }
   }
-
-  return {Docs};
+  auto ruEmbedder = Embedder(Context.RuCatModel.get(), Context.RuMatrix, Context.RuBias);
+  auto enEmbedder = Embedder(Context.EnCatModel.get(), Context.EnMatrix, Context.EnBias);
+  {
+    for (auto& doc : Docs) {
+      if (doc.Lang && doc.Lang == "ru") {
+        doc.Vector = ruEmbedder.GetEmbedding(doc);
+      } else if (doc.Lang && doc.Lang == "en") {
+        doc.Vector = enEmbedder.GetEmbedding(doc);
+      }
+    }
+    std::vector<Cluster> clustering = RunClustering(Docs);
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    return {Docs, clustering};
+  }
 }
 
 }

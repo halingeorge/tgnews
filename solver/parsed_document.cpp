@@ -148,6 +148,10 @@ void ParsedDoc::DetectCategory(const tgnews::Context& context) {
     Category = NC_UNDEFINED;
     return;
   }
+  if (Lang != "ru" & Lang != "en") {
+    Category = NC_UNDEFINED;
+    return;
+  }
   std::string sample(GoodTitle + " " + GoodText);
   const fasttext::FastText* model = Lang == "ru" ? context.RuCatModel.get() : context.EnCatModel.get();
   auto pair = RunFasttext(model, sample, 0.0);
