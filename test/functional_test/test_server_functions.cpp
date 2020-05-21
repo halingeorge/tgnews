@@ -20,7 +20,7 @@ constexpr const char* kContentDir = "test_content";
 class ServerTest : public Test {
  public:
   ServerTest() : mt(rd()) {
-    FLAGS_minloglevel = 1;
+//    FLAGS_minloglevel = 0;
 
     boost::filesystem::path content_path = kContentDir;
     if (boost::filesystem::exists(content_path)) {

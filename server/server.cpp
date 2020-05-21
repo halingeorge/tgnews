@@ -86,42 +86,37 @@ void Server::SetupHandlers() {
         std::unique_ptr<Stats::State, StatsHandler> status_handler(
             new Stats::State, StatsHandler{stats_});
 
-        std::experimental::post(pool_, [status_handler =
-                                            std::move(status_handler),
-                                        this, request = std::move(request),
-                                        response = std::move(response)] {
-          try {
-            file_manager_->RemoveOutdatedFiles();
+        try {
+          file_manager_->RemoveOutdatedFiles();
 
-            auto filename = request->path.substr(1);
-            auto content = request->content.string();
-            LOG(INFO) << "received put request: " << filename;
-            LOG(INFO) << "file content: " << content;
+          auto filename = request->path.substr(1);
+          auto content = request->content.string();
+          LOG(INFO) << "received put request: " << filename;
+          LOG(INFO) << "file content: " << content;
 
-            auto content_type = GetHeaderValue<std::string_view>(
-                request->header, "Content-Type");
-            VERIFY(content_type == "text/html",
-                   fmt::format("unexpected content type: {0}", content_type));
+          auto content_type = GetHeaderValue<std::string_view>(
+              request->header, "Content-Type");
+          VERIFY(content_type == "text/html",
+                 fmt::format("unexpected content type: {0}", content_type));
 
-            auto cache_control_str = GetHeaderValue<std::string_view>(
-                request->header, "Cache-Control");
-            uint64_t max_age;
-            ParseResult(cache_control_str.substr(8), max_age);
-            auto updated = file_manager_->StoreOrUpdateFile(
-                std::move(filename), std::move(content), max_age);
+          auto cache_control_str = GetHeaderValue<std::string_view>(
+              request->header, "Cache-Control");
+          uint64_t max_age;
+          ParseResult(cache_control_str.substr(8), max_age);
+          auto updated = file_manager_->StoreOrUpdateFile(
+              std::move(filename), std::move(content), max_age);
 
-            uint32_t status_code = updated ? 204 : 201;
-            std::string data =
-                fmt::format("HTTP/1.1 {0} Created\r\n\r\n", status_code);
-            response->write(data.data(), data.size());
-          } catch (std::exception& e) {
-            LOG(ERROR) << "exception in PUT handler: " << e.what();
-            response->write(
-                SimpleWeb::StatusCode::server_error_internal_server_error,
-                e.what());
-            status_handler->status = Stats::Status::Failure;
-          }
-        });
+          uint32_t status_code = updated ? 204 : 201;
+          std::string data =
+              fmt::format("HTTP/1.1 {0} Created\r\n\r\n", status_code);
+          response->write(data.data(), data.size());
+        } catch (std::exception& e) {
+          LOG(ERROR) << "exception in PUT handler: " << e.what();
+          response->write(
+              SimpleWeb::StatusCode::server_error_internal_server_error,
+              e.what());
+          status_handler->status = Stats::Status::Failure;
+        }
       };
 
   server_.resource["^/(.+)$"]["DELETE"] =
@@ -131,29 +126,24 @@ void Server::SetupHandlers() {
         std::unique_ptr<Stats::State, StatsHandler> status_handler(
             new Stats::State, StatsHandler{stats_});
 
-        std::experimental::post(
-            pool_,
-            [status_handler = std::move(status_handler), this,
-             request = std::move(request), response = std::move(response)] {
-              try {
-                file_manager_->RemoveOutdatedFiles();
+        try {
+          file_manager_->RemoveOutdatedFiles();
 
-                auto filename = request->path.substr(1);
-                LOG(INFO) << "received delete request: " << filename;
-                auto removed = file_manager_->RemoveFile(filename);
+          auto filename = request->path.substr(1);
+          LOG(INFO) << "received delete request: " << filename;
+          auto removed = file_manager_->RemoveFile(filename);
 
-                uint32_t status_code = removed ? 204 : 404;
-                std::string data =
-                    fmt::format("HTTP/1.1 {0} No Content\r\n\r\n", status_code);
-                response->write(data.data(), data.size());
-              } catch (std::exception& e) {
-                LOG(ERROR) << "exception in DELETE handler: " << e.what();
-                response->write(
-                    SimpleWeb::StatusCode::server_error_internal_server_error,
-                    e.what());
-                status_handler->status = Stats::Status::Failure;
-              }
-            });
+          uint32_t status_code = removed ? 204 : 404;
+          std::string data =
+              fmt::format("HTTP/1.1 {0} No Content\r\n\r\n", status_code);
+          response->write(data.data(), data.size());
+        } catch (std::exception& e) {
+          LOG(ERROR) << "exception in DELETE handler: " << e.what();
+          response->write(
+              SimpleWeb::StatusCode::server_error_internal_server_error,
+              e.what());
+          status_handler->status = Stats::Status::Failure;
+        }
       };
 
   server_.resource["^/threads$"]["GET"] =
@@ -163,33 +153,28 @@ void Server::SetupHandlers() {
         std::unique_ptr<Stats::State, StatsHandler> status_handler(
             new Stats::State, StatsHandler{stats_});
 
-        std::experimental::post(pool_, [status_handler =
-                                            std::move(status_handler),
-                                        this, request = std::move(request),
-                                        response = std::move(response)] {
-          try {
-            file_manager_->RemoveOutdatedFiles();
+        try {
+          file_manager_->RemoveOutdatedFiles();
 
-            auto [period, lang_code, category] =
-                ParseThreadsRequest(std::move(request->query_string));
-            LOG(INFO) << fmt::format(
-                "get threads with period={0} lang_code={1} category={2}",
-                period, lang_code, category);
-            SimpleWeb::CaseInsensitiveMultimap headers;
-            headers.emplace("Content-type", "application/json");
-            Json::StreamWriterBuilder builder;
-            response->write(
-                Json::writeString(
-                    builder, GetDocumentThreads(period, lang_code, category)),
-                headers);
-          } catch (std::exception& e) {
-            LOG(ERROR) << "exception in GET handler: " << e.what();
-            response->write(
-                SimpleWeb::StatusCode::server_error_internal_server_error,
-                e.what());
-            status_handler->status = Stats::Status::Failure;
-          }
-        });
+          auto [period, lang_code, category] =
+              ParseThreadsRequest(std::move(request->query_string));
+          LOG(INFO) << fmt::format(
+              "get threads with period={0} lang_code={1} category={2}",
+              period, lang_code, category);
+          SimpleWeb::CaseInsensitiveMultimap headers;
+          headers.emplace("Content-type", "application/json");
+          Json::StreamWriterBuilder builder;
+          response->write(
+              Json::writeString(
+                  builder, GetDocumentThreads(period, lang_code, category)),
+              headers);
+        } catch (std::exception& e) {
+          LOG(ERROR) << "exception in GET handler: " << e.what();
+          response->write(
+              SimpleWeb::StatusCode::server_error_internal_server_error,
+              e.what());
+          status_handler->status = Stats::Status::Failure;
+        }
       };
 
   server_.default_resource["GET"] =

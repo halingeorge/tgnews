@@ -3,8 +3,9 @@
 #include <boost/filesystem.hpp>
 #include <boost/range/iterator_range.hpp>
 #include <chrono>
+#include <continuable/continuable.hpp>
+#include <experimental/strand>
 #include <experimental/thread_pool>
-#include <experimental/future>
 #include <limits>
 #include <map>
 #include <memory>
@@ -62,14 +63,9 @@ class FileManager {
     return false;
   }
 
-  bool RemoveFile(std::string_view filename) {
-    auto it = document_by_name_.find(filename.data());
-    if (it == document_by_name_.end()) {
-      return false;
-    }
-    RemoveFileFromMap(it->second->name);
-    RemoveFileFromDisk(it->second->name);
-    return true;
+  bool RemoveFile(std::string filename) {
+    RemoveFileFromDisk(filename);
+    return RemoveFileFromMap(filename);
   }
 
   void RemoveOutdatedFiles() {
@@ -80,8 +76,8 @@ class FileManager {
       if (it->first > now) {
         break;
       }
-      RemoveFileFromMap(it->second->name);
       RemoveFileFromDisk(it->second->name);
+      RemoveFileFromMap(it->second->name);
     }
   }
 
@@ -168,20 +164,22 @@ class FileManager {
     LOG(INFO) << "restored file count: " << document_by_name_.size();
   }
 
-  void RemoveFileFromMap(std::string_view filename) {
-    auto it = document_by_name_.find(filename.data());
-    VERIFY(it != document_by_name_.end(),
-           "file has to exist in RemoveFileImpl");
+  bool RemoveFileFromMap(std::string filename) {
+    auto it = document_by_name_.find(filename);
+    if (it == document_by_name_.end()) {
+      return false;
+    }
 
     it->second->state = Document::State::Removed;
     documents_with_deadline_.erase({it->second->deadline, it->second.get()});
     document_by_name_.erase(it);
+    return true;
   }
 
   static void RemoveFileFromDisk(const boost::filesystem::path& filepath) {
-    LOG(INFO) << fmt::format("removing file from disk: {0}", filepath.string());
-    VERIFY(boost::filesystem::remove(filepath),
-           fmt::format("no file found: {0}", filepath.string()));
+    LOG(INFO) << fmt::format("removing file from disk {0}: {1}",
+                             filepath.string(),
+                             boost::filesystem::remove(filepath));
   }
 
  private:
