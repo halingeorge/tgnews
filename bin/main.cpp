@@ -31,7 +31,7 @@ int main(int argc, char** argv) {
 
   if (mode == "server") {
     int port = std::stoi(argv[2]);
-    std::experimental::thread_pool pool(1);
+    std::experimental::thread_pool pool(4);
     auto file_manager = std::make_unique<tgnews::FileManager>(pool);
     tgnews::Server server(port, std::move(file_manager), pool);
     server.Run();

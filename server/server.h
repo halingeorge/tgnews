@@ -1,5 +1,6 @@
 #pragma once
 
+#include <continuable/continuable.hpp>
 #include <cstdint>
 
 #include "base/file_manager.h"
@@ -24,8 +25,9 @@ class Server {
  private:
   void SetupHandlers();
 
-  Json::Value GetDocumentThreads(uint64_t period, std::string lang_code,
-                                 std::string category);
+  cti::continuable<Json::Value> GetDocumentThreads(uint64_t period,
+                                                   std::string lang_code,
+                                                   std::string category);
 
  private:
   uint32_t port_;
