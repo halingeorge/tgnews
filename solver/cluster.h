@@ -8,9 +8,19 @@ namespace tgnews {
   public:
     void AddDocument(const ParsedDoc& doc) {
       Docs.push_back(doc);
+      Time = std::max(Time, doc.FetchTime);
     }
     std::string GetTitle() const {
       return Docs[0].Title;
+    }
+    std::string GetLang() const {
+      return Docs[0].Lang ? *Docs[0].Lang : "en";
+    }
+    ELang GetEnumLang() const {
+      if (!Docs[0].Lang) {
+        return LangEn;
+      }
+      return Docs[0].Lang == "ru" ? LangRu : LangEn;
     }
     size_t Size() const {
       return Docs.size();
@@ -39,7 +49,11 @@ namespace tgnews {
       }
       return sum;
     }
-  private: 
+    uint64_t GetTime() const {
+      return Time;
+    }
+  private:
+    uint64_t Time; 
     std::vector<ParsedDoc> Docs;
   };
 

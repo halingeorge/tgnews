@@ -4,6 +4,8 @@
 #include <vector>
 #include <string>
 #include <chrono>
+#include <exception>
+
 namespace {
 
 using namespace tgnews;
@@ -99,7 +101,7 @@ Json::Value CalcThreadsAns(const std::vector<Cluster>& clusters) {
     thread["title"] = c.GetTitle();
     Json::Value articles;
     for (const auto& d : c.GetDocs()) {
-      articles.append(d.Title);
+      articles.append(d.FileName);
     }
     thread["articles"] = std::move(articles);
     threads.append(thread);
@@ -116,10 +118,72 @@ CalculatedResponses::CalculatedResponses(const std::vector<tgnews::ParsedDoc>& d
   NewsAns = CalcNewsAns(docs);
   CategoryAns = CalcCategoryAns(docs);
   ThreadsAns = CalcThreadsAns(clustering);
+  uint64_t now = std::max_element(clustering.begin(), clustering.end(), [](const auto& l, const auto& r) {return l.GetTime() < r.GetTime();})->GetTime();
+  size_t durIdx = 0;
+  for (const auto& duration : Discretization) {
+    using WeightWithIdx = std::pair<float, size_t>;
+    std::array<std::array<std::vector<WeightWithIdx>, ELang::LangCount>, ENewsCategory::NC_COUNT> weights;
+    for (size_t clusterIdx = 0; clusterIdx < clustering.size(); ++clusterIdx) {
+      const auto& c = clustering[clusterIdx];
+      if (c.GetTime() + duration < now) {
+        break; // cause clusters sorted (by freshness)
+      }
+      size_t catIdx = static_cast<size_t>(c.GetCategory());
+      size_t langIdx = static_cast<size_t>(c.GetEnumLang());
+      weights[catIdx][langIdx].push_back({c.Weight(), clusterIdx});
+      weights[static_cast<size_t>(NC_ANY)][langIdx].push_back({c.Weight(), clusterIdx});
+    }
+    for (size_t catIdx = 0; catIdx < NC_COUNT; catIdx++) {
+      for (size_t langIdx = 0; langIdx < LangCount; ++langIdx) {
+        auto& vec = weights[catIdx][langIdx];
+        std::sort(vec.begin(), vec.end(), std::greater<WeightWithIdx>());
+        Json::Value ans;
+        for (const auto& it : vec) {
+          Json::Value thread;
+          thread["title"] = clustering[it.second].GetTitle();
+          Json::Value articles;
+          for (const auto& d : clustering[it.second].GetDocs()) {
+            articles.append(d.FileName);
+          }
+          thread["articles"] = std::move(articles);
+          ans.append(thread);
+        }
+        Answers[durIdx][catIdx][langIdx] = ans;
+      }
+    }
+  }
+  /*for (const auto& cluster : clustering) {
+    Answers[static_cast<size_t>(cluster.GetCategory())].push_back(cluster);
+  }
+  for (size_t idx = 0; idx < Answers.size(); ++idx) {
+    std::sort(Answers[idx].begin(), Answers[idx].end(), [](const auto& l, const auto&r) {return l.GetTime() > r.GetTime();});
+  }*/
 }
 
 Json::Value CalculatedResponses::GetAns(const std::string& lang, const std::string& category, const uint64_t period) {
-  return Json::Value{};
+  size_t idx = std::distance(Discretization.begin(), std::upper_bound(Discretization.begin(), Discretization.end(), period));
+  if (idx == Discretization.size()) {
+    --idx;
+  }
+  size_t catIdx = NC_COUNT;
+  if (category == "any") catIdx = NC_ANY;
+  if (category == "society") catIdx = NC_SOCIETY;
+  if (category == "economy") catIdx = NC_ECONOMY;
+  if (category == "technology") catIdx = NC_TECHNOLOGY;
+  if (category == "sports") catIdx = NC_SPORTS;
+  if (category == "entertainment") catIdx = NC_ENTERTAINMENT;
+  if (category == "science") catIdx = NC_SCIENCE;
+  if (category == "other") catIdx = NC_OTHER;
+  if (catIdx == NC_COUNT) {
+    throw std::runtime_error("unknown cat");
+  }
+  size_t langIdx = LangCount;
+  if (lang == "ru") catIdx = LangRu;
+  if (lang == "en") catIdx = LangEn;
+  if (langIdx == LangCount) {
+    throw std::runtime_error("unknown lang");
+  }
+  return Answers[idx][catIdx][langIdx];
 }
 
 ResponseBuilder::ResponseBuilder(tgnews::Context context) : Context(std::move(context)) {}

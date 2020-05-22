@@ -9,6 +9,12 @@
 
 namespace tgnews {
 
+enum ELang {
+  LangRu = 0,
+  LangEn = 1,
+  LangCount = 2
+};
+
 enum ENewsCategory {
     NC_NOT_NEWS = -2,
     NC_UNDEFINED = -1,
@@ -34,7 +40,6 @@ class ParsedDoc {
   bool IsNews() const {
     return Category != NC_NOT_NEWS && Category != NC_UNDEFINED;
   }
- private:
   std::string Url;
   std::string SiteName;
   std::string Description;
@@ -45,7 +50,6 @@ class ParsedDoc {
   uint64_t FetchTime = 0;
 
   std::vector<std::string> OutLinks;
- public:
   std::string Title;
   std::string GoodTitle;
   std::string GoodText;

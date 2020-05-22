@@ -10,6 +10,9 @@
 
 namespace tgnews {
 
+const std::vector<int64_t> Discretization = {300, 1800, 3600, 14400, 28800, 86400, 172800, 345600, 604800, 1209600, 1814400, 2592000};
+constexpr size_t DiscretizationSize = 12;
+
 class CalculatedResponses {
  public:
   CalculatedResponses(const std::vector<tgnews::ParsedDoc>& docs, const std::vector<Cluster>& clustering);
@@ -19,6 +22,7 @@ class CalculatedResponses {
   Json::Value NewsAns;
   Json::Value CategoryAns;
   Json::Value ThreadsAns;
+  std::array<std::array<std::array<Json::Value, LangCount>, ENewsCategory::NC_COUNT>, DiscretizationSize> Answers;
 };
 
 class ResponseBuilder {

@@ -123,7 +123,8 @@ namespace tgnews {
     for (auto& c : result) {
       c.Sort();
     }
-    std::sort(result.begin(), result.end(), [](const auto& l, const auto& r) {return l.Weight() > r.Weight();});
+    // sorted afterwards
+    std::sort(result.begin(), result.end(), [](const auto& l, const auto& r) {return l.GetTime() > r.GetTime();});
     return result;
   }
 
