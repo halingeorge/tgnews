@@ -99,7 +99,7 @@ Json::Value CalcThreadsAns(const std::vector<Cluster>& clusters) {
     thread["title"] = c.GetTitle();
     Json::Value articles;
     for (const auto& d : c.GetDocs()) {
-      articles.append(d.FileName);
+      articles.append(d.Title);
     }
     thread["articles"] = std::move(articles);
     threads.append(thread);
@@ -133,6 +133,7 @@ CalculatedResponses ResponseBuilder::AddDocuments(const std::vector<DocumentCons
       doc.ParseLang(Context.LangDetect.get());
       doc.Tokenize(Context);
       doc.DetectCategory(Context);
+      doc.CalcWeight(Context);
     }
   }
   auto ruEmbedder = Embedder(Context.RuCatModel.get(), Context.RuMatrix, Context.RuBias);

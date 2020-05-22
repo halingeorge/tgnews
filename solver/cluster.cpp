@@ -120,6 +120,10 @@ namespace tgnews {
         result.push_back(c);
       }
     }
+    for (auto& c : result) {
+      c.Sort();
+    }
+    std::sort(result.begin(), result.end(), [](const auto& l, const auto& r) {return l.Weight() > r.Weight();});
     return result;
   }
 

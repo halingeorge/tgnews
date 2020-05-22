@@ -18,6 +18,17 @@ namespace tgnews {
     const std::vector<ParsedDoc>& GetDocs() const {
       return Docs;
     }
+    void Sort() {
+      sort(Docs.begin(), Docs.end(), [](const auto& l, const auto& r) {return l.Weight > r.Weight;});
+    }
+    float Weight() const {
+      return Docs.size();
+      float sum = 0.f;
+      for (const auto& d : Docs) {
+        sum += d.Weight;
+      }
+      return sum;
+    }
   private: 
     std::vector<ParsedDoc> Docs;
   };

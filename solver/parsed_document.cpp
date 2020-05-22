@@ -184,4 +184,8 @@ void ParsedDoc::DetectCategory(const tgnews::Context& context) {
   return;
 }
 
+void ParsedDoc::CalcWeight(const tgnews::Context& context) {
+  Weight = context.Ratings.ScoreUrl(Url);
+}
+
 }

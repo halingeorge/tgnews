@@ -4,8 +4,24 @@
 #include <boost/range/iterator_range.hpp>
 
 #include <fstream>
+#include <regex>
 
 namespace tgnews {
+
+std::string GetHost(const std::string& url) {
+  std::string output = "";
+  try {
+    std::regex ex("(http|https)://(?:www\\.)?([^/ :]+):?([^/ ]*)(/?[^ #?]*)\\x3f?([^ #]*)#?([^ ]*)");
+    std::smatch what;
+    if (std::regex_match(url, what, ex) && what.size() >= 3) {
+      output = std::string(what[2].first, what[2].second);
+    }
+  } catch (...) {
+    return output;
+  }
+  return output;
+}
+
 
 std::vector<DocumentConstPtr> MakeDocumentsFromDir(const std::string& dir, int nDocs) {
   boost::filesystem::path dirPath(dir);

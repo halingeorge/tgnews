@@ -30,7 +30,7 @@ class ParsedDoc {
   void ParseLang(const fasttext::FastText* model);
   void Tokenize(const tgnews::Context& context);
   void DetectCategory(const tgnews::Context& context);
-
+  void CalcWeight(const tgnews::Context& context);
  private:
   std::string Url;
   std::string SiteName;
@@ -50,6 +50,7 @@ class ParsedDoc {
   std::optional<std::string> Lang;
   ENewsCategory Category = NC_UNDEFINED;
   fasttext::Vector Vector = fasttext::Vector(50);
+  float Weight;
 };
 
 }
