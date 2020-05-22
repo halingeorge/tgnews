@@ -28,7 +28,7 @@ Json::Value CalcLangAns(const std::vector<tgnews::ParsedDoc>& docs) {
 Json::Value CalcNewsAns(const std::vector<tgnews::ParsedDoc>& docs) {
   Json::Value articles;  
   for (const auto& doc : docs) {
-    if (doc.Category != ENewsCategory::NC_NOT_NEWS && doc.Category != ENewsCategory::NC_UNDEFINED && doc.Category != ENewsCategory::NC_OTHER) {
+    if (doc.IsNews()) {
       articles.append(doc.FileName + *doc.Lang);
     }
   }
@@ -147,7 +147,6 @@ CalculatedResponses ResponseBuilder::AddDocuments(const std::vector<DocumentCons
       }
     }
     std::vector<Cluster> clustering = RunClustering(Docs);
-    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     return {Docs, clustering};
   }
 }

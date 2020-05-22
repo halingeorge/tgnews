@@ -18,11 +18,21 @@ namespace tgnews {
     const std::vector<ParsedDoc>& GetDocs() const {
       return Docs;
     }
+
+    ENewsCategory GetCategory() const {
+      std::vector<size_t> categoryCount(NC_COUNT);
+      for (const auto& doc : Docs) {
+        ENewsCategory docCategory = doc.Category;
+        assert(docCategory != NC_UNDEFINED && docCategory != NC_NOT_NEWS);
+        categoryCount[static_cast<size_t>(docCategory)] += 1;
+      }
+      auto it = std::max_element(categoryCount.begin(), categoryCount.end());
+      return static_cast<ENewsCategory>(std::distance(categoryCount.begin(), it));
+    }
     void Sort() {
       sort(Docs.begin(), Docs.end(), [](const auto& l, const auto& r) {return l.Weight > r.Weight;});
     }
     float Weight() const {
-      return Docs.size();
       float sum = 0.f;
       for (const auto& d : Docs) {
         sum += d.Weight;

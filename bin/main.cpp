@@ -12,7 +12,7 @@
 #include <iostream>
 
 DEFINE_string(modelsPath, "models", " subj");
-DEFINE_int32(docsCount, 10000, "how much docs to read, -1 to read all");
+DEFINE_int32(docsCount, -1, "how much docs to read, -1 to read all");
 
 int main(int argc, char** argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, false);

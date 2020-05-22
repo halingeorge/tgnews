@@ -31,6 +31,9 @@ class ParsedDoc {
   void Tokenize(const tgnews::Context& context);
   void DetectCategory(const tgnews::Context& context);
   void CalcWeight(const tgnews::Context& context);
+  bool IsNews() const {
+    return Category != NC_NOT_NEWS && Category != NC_UNDEFINED;
+  }
  private:
   std::string Url;
   std::string SiteName;
