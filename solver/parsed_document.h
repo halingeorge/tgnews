@@ -9,6 +9,12 @@
 
 namespace tgnews {
 
+enum ELang {
+  LangRu = 0,
+  LangEn = 1,
+  LangCount = 2
+};
+
 enum ENewsCategory {
     NC_NOT_NEWS = -2,
     NC_UNDEFINED = -1,
@@ -27,11 +33,18 @@ enum ENewsCategory {
 class ParsedDoc {
  public:
   ParsedDoc(const Document& doc);
+  ParsedDoc(const std::string& name, const std::string& content);
+  ParsedDoc(const Json::Value& value);
+  
   void ParseLang(const fasttext::FastText* model);
   void Tokenize(const tgnews::Context& context);
   void DetectCategory(const tgnews::Context& context);
+  void CalcWeight(const tgnews::Context& context);
+  bool IsNews() const {
+    return Category != NC_NOT_NEWS && Category != NC_UNDEFINED;
+  }
 
- private:
+  Json::Value Serialize() const;
   std::string Url;
   std::string SiteName;
   std::string Description;
@@ -42,7 +55,6 @@ class ParsedDoc {
   uint64_t FetchTime = 0;
 
   std::vector<std::string> OutLinks;
- public:
   std::string Title;
   std::string GoodTitle;
   std::string GoodText;
@@ -50,6 +62,7 @@ class ParsedDoc {
   std::optional<std::string> Lang;
   ENewsCategory Category = NC_UNDEFINED;
   fasttext::Vector Vector = fasttext::Vector(50);
+  float Weight;
 };
 
 }

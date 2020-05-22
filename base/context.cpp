@@ -51,6 +51,7 @@ namespace tgnews {
 Context::Context(const std::string modelPath, std::unique_ptr<FileCache> fileCache)
   : fileCache(std::move(fileCache))
   , Tokenizer(onmt::Tokenizer::Mode::Conservative, onmt::Tokenizer::Flags::CaseFeature)
+  , Ratings(modelPath + "/pagerank_rating.txt")
 {
   LangDetect = std::make_unique<fasttext::FastText>();
   LangDetect->loadModel(modelPath + "/lang_detect.ftz");

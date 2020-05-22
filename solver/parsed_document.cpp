@@ -5,9 +5,31 @@
 #include <third_party/tinyxml2/tinyxml2.h>
 
 #include <stdexcept>
+#include <ctime>
+#include <regex>
 
-static uint64_t DateToTimestamp(const std::string& d) {
-  return 0; // TODO(makeshit)
+static uint64_t DateToTimestamp(const std::string& date) {
+  std::regex ex("(\\d\\d\\d\\d)-(\\d\\d)-(\\d\\d)T(\\d\\d):(\\d\\d):(\\d\\d)([+-])(\\d\\d):(\\d\\d)");
+    std::smatch what;
+    if (!std::regex_match(date, what, ex) || what.size() < 10) {
+        throw std::runtime_error("wrong date format");
+    }
+    std::tm t = {};
+    t.tm_sec = std::stoi(what[6]);
+    t.tm_min = std::stoi(what[5]);
+    t.tm_hour = std::stoi(what[4]);
+    t.tm_mday = std::stoi(what[3]);
+    t.tm_mon = std::stoi(what[2]) - 1;
+    t.tm_year = std::stoi(what[1]) - 1900;
+
+    time_t timestamp = timegm(&t);
+    uint64_t zone_ts = std::stoi(what[8]) * 60 * 60 + std::stoi(what[9]) * 60;
+    if (what[7] == "+") {
+        timestamp = timestamp - zone_ts;
+    } else if (what[7] == "-") {
+        timestamp = timestamp + zone_ts;
+    }
+    return timestamp > 0 ? timestamp : 0;
 }
 
 static std::string GetFullText(const tinyxml2::XMLElement* element) {
@@ -42,11 +64,13 @@ static void ParseLinksFromText(const tinyxml2::XMLElement* element, std::vector<
 
 namespace tgnews {
 
-ParsedDoc::ParsedDoc(const Document& doc) {
-  FileName = doc.name;
+ParsedDoc::ParsedDoc(const Document& doc) : ParsedDoc(doc.name, doc.content) {}
+
+ParsedDoc::ParsedDoc(const std::string& name, const std::string& content) {
+  FileName = name;
 
   tinyxml2::XMLDocument originalDoc;
-  originalDoc.Parse(doc.content.data());
+  originalDoc.Parse(content.data());
   const tinyxml2::XMLElement* htmlElement = originalDoc.FirstChildElement("html");
   if (!htmlElement) {
     throw std::runtime_error("Parser error: no html tag");
@@ -116,6 +140,32 @@ ParsedDoc::ParsedDoc(const Document& doc) {
   }
 }
 
+ParsedDoc::ParsedDoc(const Json::Value& value) {
+#define GET_STRING(s) s = value[#s].asString();
+  GET_STRING(Title);
+  GET_STRING(Url);
+  GET_STRING(SiteName);
+  GET_STRING(Description);
+  GET_STRING(Text);
+#undef GET_STRING
+#define GET_UINT64(s) s = value[#s].asUInt64();
+  GET_UINT64(FetchTime);
+#undef GET_UINT64
+}
+Json::Value ParsedDoc::Serialize() const {
+  Json::Value res;
+#define ADD(s) res[#s] = s;
+  ADD(Title);
+  ADD(Url);
+  ADD(SiteName);
+  ADD(Description);
+  ADD(FetchTime);
+  ADD(Text);
+#undef ADD
+  return res;
+}
+
+
 void ParsedDoc::ParseLang(const fasttext::FastText* model) {
   std::string sample(Title + " " + Description + " " + Text.substr(0, 100));
   auto pair = RunFasttext(model, sample, 0.4);
@@ -182,6 +232,10 @@ void ParsedDoc::DetectCategory(const tgnews::Context& context) {
     Category = NC_UNDEFINED;
   }
   return;
+}
+
+void ParsedDoc::CalcWeight(const tgnews::Context& context) {
+  Weight = context.Ratings.ScoreUrl(Url);
 }
 
 }

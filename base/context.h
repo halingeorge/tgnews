@@ -1,5 +1,6 @@
 #pragma once
 #include "base/file_cache.h"
+#include "base/agency.h"
 
 #include <string>
 #include <memory>
@@ -24,6 +25,7 @@ class Context {
   Eigen::MatrixXf EnMatrix;
   Eigen::VectorXf EnBias;
   onmt::Tokenizer Tokenizer;
+  TAgencyRating Ratings;
 };
 
 }

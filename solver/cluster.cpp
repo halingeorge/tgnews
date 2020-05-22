@@ -94,9 +94,9 @@ namespace tgnews {
   std::vector<Cluster> RunClustering(std::vector<ParsedDoc>& docs) {
     std::vector<ParsedDoc> ruDocs, enDocs;
     for (auto& doc : docs) {
-      if (doc.Lang && doc.Lang == "ru") {
+      if (doc.Lang && doc.Lang == "ru" && doc.IsNews()) {
         ruDocs.push_back(doc);
-      } else if (doc.Lang && doc.Lang == "en") {
+      } else if (doc.Lang && doc.Lang == "en" && doc.IsNews()) {
         enDocs.push_back(doc);
       }
     }
@@ -120,6 +120,11 @@ namespace tgnews {
         result.push_back(c);
       }
     }
+    for (auto& c : result) {
+      c.Sort();
+    }
+    // sorted afterwards
+    std::sort(result.begin(), result.end(), [](const auto& l, const auto& r) {return l.GetTime() > r.GetTime();});
     return result;
   }
 
