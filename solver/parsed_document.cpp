@@ -64,11 +64,13 @@ static void ParseLinksFromText(const tinyxml2::XMLElement* element, std::vector<
 
 namespace tgnews {
 
-ParsedDoc::ParsedDoc(const Document& doc) {
-  FileName = doc.name;
+ParsedDoc::ParsedDoc(const Document& doc) : ParsedDoc(doc.name, doc.content) {}
+
+ParsedDoc::ParsedDoc(const std::string& name, const std::string& content) {
+  FileName = name;
 
   tinyxml2::XMLDocument originalDoc;
-  originalDoc.Parse(doc.content.data());
+  originalDoc.Parse(content.data());
   const tinyxml2::XMLElement* htmlElement = originalDoc.FirstChildElement("html");
   if (!htmlElement) {
     throw std::runtime_error("Parser error: no html tag");
@@ -137,6 +139,32 @@ ParsedDoc::ParsedDoc(const Document& doc) {
     Author = aElement->GetText();
   }
 }
+
+ParsedDoc::ParsedDoc(const Json::Value& value) {
+#define GET_STRING(s) s = value[#s].asString();
+  GET_STRING(Title);
+  GET_STRING(Url);
+  GET_STRING(SiteName);
+  GET_STRING(Description);
+  GET_STRING(Text);
+#undef GET_STRING
+#define GET_UINT64(s) s = value[#s].asUInt64();
+  GET_UINT64(FetchTime);
+#undef GET_UINT64
+}
+Json::Value ParsedDoc::Serialize() const {
+  Json::Value res;
+#define ADD(s) res[#s] = s;
+  ADD(Title);
+  ADD(Url);
+  ADD(SiteName);
+  ADD(Description);
+  ADD(FetchTime);
+  ADD(Text);
+#undef ADD
+  return res;
+}
+
 
 void ParsedDoc::ParseLang(const fasttext::FastText* model) {
   std::string sample(Title + " " + Description + " " + Text.substr(0, 100));

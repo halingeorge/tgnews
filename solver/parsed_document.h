@@ -33,6 +33,9 @@ enum ENewsCategory {
 class ParsedDoc {
  public:
   ParsedDoc(const Document& doc);
+  ParsedDoc(const std::string& name, const std::string& content);
+  ParsedDoc(const Json::Value& value);
+  
   void ParseLang(const fasttext::FastText* model);
   void Tokenize(const tgnews::Context& context);
   void DetectCategory(const tgnews::Context& context);
@@ -40,6 +43,8 @@ class ParsedDoc {
   bool IsNews() const {
     return Category != NC_NOT_NEWS && Category != NC_UNDEFINED;
   }
+
+  Json::Value Serialize() const;
   std::string Url;
   std::string SiteName;
   std::string Description;
