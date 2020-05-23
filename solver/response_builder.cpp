@@ -31,7 +31,7 @@ nlohmann::json CalcNewsAns(const std::vector<tgnews::ParsedDoc>& docs) {
   nlohmann::json articles = nlohmann::json::array();  
   for (const auto& doc : docs) {
     if (doc.IsNews()) {
-      articles.push_back(doc.FileName + *doc.Lang);
+      articles.push_back(doc.FileName);
     }
   }
   nlohmann::json result;
@@ -85,7 +85,7 @@ nlohmann::json CalcCategoryAns(const std::vector<tgnews::ParsedDoc>& docs) {
   nlohmann::json result = nlohmann::json::array();
 #define ADD_TO_RESULT(s) { \
                          nlohmann::json tmp; \
-                         tmp[#s] = #s; \
+                         tmp["category"] = #s; \
                          tmp["articles"] = s; \
                          result.push_back(tmp); \
                          }
