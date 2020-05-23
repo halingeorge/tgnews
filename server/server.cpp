@@ -190,8 +190,7 @@ void Server::SetupHandlers() {
               .then([=](auto&& value) {
                 SimpleWeb::CaseInsensitiveMultimap headers;
                 headers.emplace("Content-type", "application/json");
-                Json::StreamWriterBuilder builder;
-                response->write(Json::writeString(builder, value), headers);
+                response->write(value.dump(), headers);
                 stats_handler->OnSuccess();
               }).fail(OnFailCallback(response, stats_handler));
 
@@ -207,14 +206,14 @@ void Server::SetupHandlers() {
       };
 }
 
-cti::continuable<Json::Value> Server::GetDocumentThreads(
+cti::continuable<nlohmann::json> Server::GetDocumentThreads(
     uint64_t /*period*/, std::string /*lang_code*/, std::string /*category*/) {
   return file_manager_->GetDocuments().then(
       [](std::vector<DocumentConstPtr> documents) {
-        Json::Value value;
-        Json::Value articles;
+        nlohmann::json value;
+        nlohmann::json articles = nlohmann::json::array();
         for (auto document_ptr : documents) {
-          articles.append(document_ptr->name);
+          articles.push_back(document_ptr->name);
         }
         value["articles"] = std::move(articles);
         LOG(INFO) << "GetDocumentThreads: " << value;

@@ -21,7 +21,7 @@
 #include "base/time_helpers.h"
 #include "fmt/format.h"
 #include "glog/logging.h"
-#include "json/json.h"
+#include "third_party/nlohmann_json/single_include/nlohmann/json.hpp"
 
 namespace tgnews {
 
@@ -161,7 +161,7 @@ class FileManager {
   }
 
   void DumpOnDisk(std::string_view filepath, const Document& document) {
-    Json::Value value;
+    nlohmann::json value;
 
     value["deadline"] = document.deadline;
     value["content"] = document.content;
@@ -189,11 +189,11 @@ class FileManager {
         boost::filesystem::directory_iterator(path), {})) {
       boost::filesystem::ifstream file(entry.path());
 
-      Json::Value value;
+      nlohmann::json value;
       file >> value;
 
-      auto deadline = value["deadline"].as<uint64_t>();
-      auto content = value["content"].as<std::string>();
+      auto deadline = value["deadline"].get<uint64_t>();
+      auto content = value["content"].get<std::string>();
 
       if (deadline <= now) {
         LOG(INFO) << "file is outdated: " << entry.path();

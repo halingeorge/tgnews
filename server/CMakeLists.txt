@@ -13,4 +13,4 @@ add_library(server STATIC ${SRCS})
 
 find_package(Boost COMPONENTS filesystem REQUIRED)
 
-target_link_libraries(server continuable simple-web-server glog jsoncpp_lib fmt base solver ${Boost_FILESYSTEM_LIBRARY} )
+target_link_libraries(server continuable simple-web-server glog fmt base solver ${Boost_FILESYSTEM_LIBRARY} )

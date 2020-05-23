@@ -25,7 +25,7 @@ class Server {
  private:
   void SetupHandlers();
 
-  cti::continuable<Json::Value> GetDocumentThreads(uint64_t period,
+  cti::continuable<nlohmann::json> GetDocumentThreads(uint64_t period,
                                                    std::string lang_code,
                                                    std::string category);
 

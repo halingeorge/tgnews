@@ -52,14 +52,12 @@ std::vector<std::string> GetArticles(SimpleWeb::Client<SimpleWeb::HTTP>& client,
   EXPECT_EQ(GetHeaderValue(response->header, "Content-Type"), "application/json");
   EXPECT_GT(boost::lexical_cast<size_t>(GetHeaderValue(response->header, "Content-Length")), 0);
 
-  Json::Value value;
-  Json::Reader reader;
-  VERIFY(reader.parse(response->content.string(), value),
-         fmt::format("error while reading articles: {}", reader.getFormattedErrorMessages()))
-  LOG(INFO) << "articles: " << value.toStyledString();
+  nlohmann::json value = nlohmann::json::parse(response->content.string());
+  
+  LOG(INFO) << "articles: " << value.dump(4);
   std::vector<std::string> articles;
   for (const auto& article : value["articles"]) {
-    articles.push_back(article.asString());
+    articles.push_back(article.get<std::string>());
   }
   return articles;
 }

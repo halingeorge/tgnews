@@ -10,9 +10,6 @@
 [submodule "third_party/simple_web_server"]
 	path = third_party/simple_web_server
 	url = https://github.com/eidheim/Simple-Web-Server.git
-[submodule "third_party/jsoncpp"]
-	path = third_party/jsoncpp
-	url = https://github.com/open-source-parsers/jsoncpp.git
 [submodule "third_party/fmt"]
 	path = third_party/fmt
 	url = https://github.com/fmtlib/fmt.git
