@@ -113,7 +113,7 @@ nlohmann::json CalcThreadsAns(const std::vector<Cluster>& clusters) {
     thread["title"] = c.GetTitle();
     nlohmann::json articles = nlohmann::json::array();
     for (const auto& d : c.GetDocs()) {
-      articles.push_back(d.Title);
+      articles.push_back(d.FileName);
     }
     thread["articles"] = std::move(articles);
     threads.push_back(thread);
