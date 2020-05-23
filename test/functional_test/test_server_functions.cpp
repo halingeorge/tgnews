@@ -20,7 +20,7 @@ constexpr const char* kContentDir = "test_content";
 class ServerTest : public Test {
  public:
   ServerTest() : mt(rd()) {
-//    FLAGS_minloglevel = 0;
+    FLAGS_minloglevel = 1;
 
     boost::filesystem::path content_path = kContentDir;
     if (boost::filesystem::exists(content_path)) {
@@ -41,6 +41,9 @@ class ServerTest : public Test {
   }
 
   ~ServerTest() {
+    pool_.stop();
+    pool_.join();
+
     server->Stop();
 
     server_thread_->join();
@@ -52,15 +55,17 @@ class ServerTest : public Test {
         << "path still exists: " << kContentDir;
   }
 
-  std::unique_ptr<Server> server;
   std::random_device rd;
   std::mt19937 mt;
 
   std::unique_ptr<SimpleWeb::Client<SimpleWeb::HTTP>> client;
 
  private:
+  std::experimental::thread_pool pool_{4};
   std::unique_ptr<std::thread> server_thread_;
-  std::experimental::thread_pool pool_{1};
+
+ public:
+  std::unique_ptr<Server> server;
 };
 
 TEST_F(ServerTest, TestDeleteNonexistent) {

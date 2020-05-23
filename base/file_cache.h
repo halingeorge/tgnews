@@ -10,12 +10,12 @@ class FileCache {
   explicit FileCache(FileManager* file_manager) : file_manager_(file_manager) {
   }
 
-  bool IsFileStillAlive(std::string_view filename) {
-    return file_manager_->IsFileStillAlive(filename);
+  bool IsFileStillAlive(std::string filename) {
+    return file_manager_->IsFileStillAlive(std::move(filename));
   }
 
-  std::vector<std::shared_ptr<const Document>> GetDocuments() {
-    return file_manager_->GetDocuments();
+  std::vector<DocumentConstPtr> GetDocuments() {
+    return file_manager_->GetDocuments().apply(cti::transforms::wait());
   }
 
  private:
