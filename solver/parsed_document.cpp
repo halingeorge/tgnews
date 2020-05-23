@@ -140,20 +140,18 @@ ParsedDoc::ParsedDoc(const std::string& name, const std::string& content) {
   }
 }
 
-ParsedDoc::ParsedDoc(const Json::Value& value) {
-#define GET_STRING(s) s = value[#s].asString();
-  GET_STRING(Title);
-  GET_STRING(Url);
-  GET_STRING(SiteName);
-  GET_STRING(Description);
-  GET_STRING(Text);
-#undef GET_STRING
-#define GET_UINT64(s) s = value[#s].asUInt64();
-  GET_UINT64(FetchTime);
-#undef GET_UINT64
+ParsedDoc::ParsedDoc(const nlohmann::json& value) {
+#define GET(s) value.at(#s).get_to(s);
+  GET(Title);
+  GET(Url);
+  GET(SiteName);
+  GET(Description);
+  GET(Text);
+  GET(FetchTime);
+#undef GET
 }
-Json::Value ParsedDoc::Serialize() const {
-  Json::Value res;
+nlohmann::json ParsedDoc::Serialize() const {
+  nlohmann::json res;
 #define ADD(s) res[#s] = s;
   ADD(Title);
   ADD(Url);

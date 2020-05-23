@@ -10,80 +10,85 @@ namespace {
 
 using namespace tgnews;
 
-Json::Value CalcLangAns(const std::vector<tgnews::ParsedDoc>& docs) {
-  Json::Value result;
-  int idx = 0;
+nlohmann::json CalcLangAns(const std::vector<tgnews::ParsedDoc>& docs) {
+  nlohmann::json result = nlohmann::json::array();
   for (const auto& lang : {"en", "ru"}) {
-    result[idx]["lang_code"] = lang;
-    int docidx = 0;
+    nlohmann::json lang_obj;
+    lang_obj["lang_code"] = lang;
+    nlohmann::json articles = nlohmann::json::array();
     for (const auto& doc : docs) {
       if (doc.Lang == lang) {
-        result[idx]["articles"][docidx] = doc.FileName;
-        ++docidx;
+        articles.push_back(doc.FileName);
       }
     }
-    ++idx;
+    lang_obj["articles"] = articles;
+    result.push_back(lang_obj);
   }
   return result;
 }
 
-Json::Value CalcNewsAns(const std::vector<tgnews::ParsedDoc>& docs) {
-  Json::Value articles;  
+nlohmann::json CalcNewsAns(const std::vector<tgnews::ParsedDoc>& docs) {
+  nlohmann::json articles = nlohmann::json::array();  
   for (const auto& doc : docs) {
     if (doc.IsNews()) {
-      articles.append(doc.FileName + *doc.Lang);
+      articles.push_back(doc.FileName + *doc.Lang);
     }
   }
-  Json::Value result;
+  nlohmann::json result;
   result["articles"] = std::move(articles);
   return result;
 }
 
-Json::Value CalcCategoryAns(const std::vector<tgnews::ParsedDoc>& docs) {
-  Json::Value society;
+nlohmann::json CalcCategoryAns(const std::vector<tgnews::ParsedDoc>& docs) {
+  nlohmann::json society = nlohmann::json::array();
   for (const auto& doc : docs) {
     if (doc.Category == ENewsCategory::NC_SOCIETY) {
-      society.append(doc.FileName);
+      society.push_back(doc.FileName);
     }
   }
-  Json::Value economy;
+  nlohmann::json economy = nlohmann::json::array();
   for (const auto& doc : docs) {
     if (doc.Category == ENewsCategory::NC_ECONOMY) {
-      economy.append(doc.FileName);
+      economy.push_back(doc.FileName);
     }
   }
-  Json::Value technology;
+  nlohmann::json technology = nlohmann::json::array();
   for (const auto& doc : docs) {
     if (doc.Category == ENewsCategory::NC_TECHNOLOGY) {
-      technology.append(doc.FileName);
+      technology.push_back(doc.FileName);
     }
   }
-  Json::Value sports;
+  nlohmann::json sports = nlohmann::json::array();
   for (const auto& doc : docs) {
     if (doc.Category == ENewsCategory::NC_SPORTS) {
-      sports.append(doc.FileName);
+      sports.push_back(doc.FileName);
     }
   }
-  Json::Value entertainment;
+  nlohmann::json entertainment = nlohmann::json::array();
   for (const auto& doc : docs) {
     if (doc.Category == ENewsCategory::NC_ENTERTAINMENT) {
-      entertainment.append(doc.FileName);
+      entertainment.push_back(doc.FileName);
     }
   }
-  Json::Value science;
+  nlohmann::json science = nlohmann::json::array();
   for (const auto& doc : docs) {
     if (doc.Category == ENewsCategory::NC_SCIENCE) {
-      science.append(doc.FileName);
+      science.push_back(doc.FileName);
     }
   }
-  Json::Value other;
+  nlohmann::json other = nlohmann::json::array();
   for (const auto& doc : docs) {
     if (doc.Category == ENewsCategory::NC_OTHER) {
-      other.append(doc.FileName);
+      other.push_back(doc.FileName);
     }
   }
-  Json::Value result;
-#define ADD_TO_RESULT(s) result[#s] = std::move(s);
+  nlohmann::json result = nlohmann::json::array();
+#define ADD_TO_RESULT(s) { \
+                         nlohmann::json tmp; \
+                         tmp[#s] = #s; \
+                         tmp["articles"] = s; \
+                         result.push_back(tmp); \
+                         }
   ADD_TO_RESULT(society);
   ADD_TO_RESULT(economy);
   ADD_TO_RESULT(technology);
@@ -94,17 +99,24 @@ Json::Value CalcCategoryAns(const std::vector<tgnews::ParsedDoc>& docs) {
   return result;
 }
 
-Json::Value CalcThreadsAns(const std::vector<Cluster>& clusters) {
-  Json::Value threads;
-  for (const auto& c : clusters) {
-    Json::Value thread;
+nlohmann::json CalcThreadsAns(const std::vector<Cluster>& clusters) {
+  nlohmann::json threads = nlohmann::json::array();
+  std::vector<std::pair<float, size_t>> weights;
+  for (size_t idx = 0; idx < clusters.size(); ++idx) {
+    const auto& c = clusters[idx];
+    weights.push_back({c.Weight(), idx});
+  }
+  std::sort(weights.begin(), weights.end(), std::greater<std::pair<float, size_t>>());
+  for (size_t idx = 0; idx < clusters.size(); ++idx) {
+    const auto& c = clusters[weights[idx].second];
+    nlohmann::json thread;
     thread["title"] = c.GetTitle();
-    Json::Value articles;
+    nlohmann::json articles = nlohmann::json::array();
     for (const auto& d : c.GetDocs()) {
-      articles.append(d.FileName);
+      articles.push_back(d.Title);
     }
     thread["articles"] = std::move(articles);
-    threads.append(thread);
+    threads.push_back(thread);
   }
   return threads;
 }
@@ -137,30 +149,24 @@ CalculatedResponses::CalculatedResponses(const std::vector<tgnews::ParsedDoc>& d
       for (size_t langIdx = 0; langIdx < LangCount; ++langIdx) {
         auto& vec = weights[catIdx][langIdx];
         std::sort(vec.begin(), vec.end(), std::greater<WeightWithIdx>());
-        Json::Value ans;
+        nlohmann::json ans = nlohmann::json::array();
         for (const auto& it : vec) {
-          Json::Value thread;
+          nlohmann::json thread;
           thread["title"] = clustering[it.second].GetTitle();
-          Json::Value articles;
+          nlohmann::json articles = nlohmann::json::array();
           for (const auto& d : clustering[it.second].GetDocs()) {
-            articles.append(d.FileName);
+            articles.push_back(d.FileName);
           }
           thread["articles"] = std::move(articles);
-          ans.append(thread);
+          ans.push_back(thread);
         }
         Answers[durIdx][catIdx][langIdx] = ans;
       }
     }
   }
-  /*for (const auto& cluster : clustering) {
-    Answers[static_cast<size_t>(cluster.GetCategory())].push_back(cluster);
-  }
-  for (size_t idx = 0; idx < Answers.size(); ++idx) {
-    std::sort(Answers[idx].begin(), Answers[idx].end(), [](const auto& l, const auto&r) {return l.GetTime() > r.GetTime();});
-  }*/
 }
 
-Json::Value CalculatedResponses::GetAns(const std::string& lang, const std::string& category, const uint64_t period) {
+nlohmann::json CalculatedResponses::GetAns(const std::string& lang, const std::string& category, const uint64_t period) {
   size_t idx = std::distance(Discretization.begin(), std::upper_bound(Discretization.begin(), Discretization.end(), period));
   if (idx == Discretization.size()) {
     --idx;
@@ -189,20 +195,25 @@ Json::Value CalculatedResponses::GetAns(const std::string& lang, const std::stri
 ResponseBuilder::ResponseBuilder(tgnews::Context context) : Context(std::move(context)) {}
 
 CalculatedResponses ResponseBuilder::AddDocuments(const std::vector<DocumentConstPtr>& docs) {
+  std::cerr << docs.size() << " - docs size" << std::endl;
   for (const auto& doc : docs) {
     Docs.emplace_back(*doc);
   }
   {
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     for (auto& doc : Docs) {
       doc.ParseLang(Context.LangDetect.get());
       doc.Tokenize(Context);
       doc.DetectCategory(Context);
       doc.CalcWeight(Context);
     }
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    std::cerr << "Time difference categorization = " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << "[milli]" << std::endl;
   }
   auto ruEmbedder = Embedder(Context.RuCatModel.get(), Context.RuMatrix, Context.RuBias);
   auto enEmbedder = Embedder(Context.EnCatModel.get(), Context.EnMatrix, Context.EnBias);
   {
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     for (auto& doc : Docs) {
       if (doc.Lang && doc.Lang == "ru") {
         doc.Vector = ruEmbedder.GetEmbedding(doc);
@@ -211,6 +222,8 @@ CalculatedResponses ResponseBuilder::AddDocuments(const std::vector<DocumentCons
       }
     }
     std::vector<Cluster> clustering = RunClustering(Docs);
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    std::cerr << "Time difference clustering = " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << "[milli]" << std::endl;
     return {Docs, clustering};
   }
 }

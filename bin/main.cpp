@@ -45,13 +45,13 @@ int main(int argc, char** argv) {
   auto docs = tgnews::MakeDocumentsFromDir(content_dir, FLAGS_docsCount);
   LOG(INFO) << fmt::format("Docs size - {}", docs.size());
   if (mode == "languages") {
-    std::cout << responseBuilder.AddDocuments(docs).LangAns;
+    std::cout << responseBuilder.AddDocuments(docs).LangAns.dump(4);
   } else if (mode == "news") {
-    std::cout << responseBuilder.AddDocuments(docs).NewsAns;    
+    std::cout << responseBuilder.AddDocuments(docs).NewsAns.dump(4);
   } else if (mode == "categories") {
-    std::cout << responseBuilder.AddDocuments(docs).CategoryAns;
+    std::cout << responseBuilder.AddDocuments(docs).CategoryAns.dump(4);
   } else if (mode == "threads") {
-    std::cout << responseBuilder.AddDocuments(docs).ThreadsAns;
+    std::cout << responseBuilder.AddDocuments(docs).ThreadsAns.dump(4);
   }
   return 0;
 }

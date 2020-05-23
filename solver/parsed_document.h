@@ -3,7 +3,7 @@
 #include "base/context.h"
 
 #include "third_party/fastText/src/fasttext.h"
-
+#include "third_party/nlohmann_json/single_include/nlohmann/json.hpp"
 #include <string>
 #include <vector>
 
@@ -34,7 +34,7 @@ class ParsedDoc {
  public:
   ParsedDoc(const Document& doc);
   ParsedDoc(const std::string& name, const std::string& content);
-  ParsedDoc(const Json::Value& value);
+  ParsedDoc(const nlohmann::json& value);
   
   void ParseLang(const fasttext::FastText* model);
   void Tokenize(const tgnews::Context& context);
@@ -44,7 +44,7 @@ class ParsedDoc {
     return Category != NC_NOT_NEWS && Category != NC_UNDEFINED;
   }
 
-  Json::Value Serialize() const;
+  nlohmann::json Serialize() const;
   std::string Url;
   std::string SiteName;
   std::string Description;
