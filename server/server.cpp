@@ -223,11 +223,11 @@ void Server::SetupHandlers() {
 cti::continuable<nlohmann::json> Server::GetDocumentThreads(
     uint64_t /*period*/, std::string /*lang_code*/, std::string /*category*/) {
   return file_manager_->GetDocuments().then(
-      [](std::vector<DocumentConstPtr> documents) {
+      [](std::vector<Document> documents) {
         nlohmann::json value;
         nlohmann::json articles = nlohmann::json::array();
         for (auto document_ptr : documents) {
-          articles.push_back(document_ptr->name);
+          articles.push_back(document_ptr.name);
         }
         value["articles"] = std::move(articles);
         LOG(INFO) << "GetDocumentThreads: " << value;
