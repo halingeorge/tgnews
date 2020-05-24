@@ -245,15 +245,18 @@ void Server::UpdateResponseCache() {
     }
     std::experimental::dispatch(
         responses_cache_strand_, [this, change_log = std::move(change_log)]() mutable {
-          LOG(WARNING) << "change log size: " << change_log.size() << " in: " << std::this_thread::get_id();
-          auto response_cache =
-              std::make_unique<CalculatedResponses>(response_builder_->AddDocuments(change_log));
+          std::unique_ptr<CalculatedResponses> responses_cache;
+          try {
+            responses_cache =
+                std::make_unique<CalculatedResponses>(response_builder_->AddDocuments(change_log));
+          } catch (std::exception& e) {
+            LOG(ERROR) << "AddDocuments exception caught: " << e.what();
+            return;
+          }
           std::unique_lock lock(responses_cache_mutex_);
-          responses_cache_ = std::move(response_cache);
-          LOG(WARNING) << "updated";
+          responses_cache_ = std::move(responses_cache);
         });
   });
-  LOG(WARNING) << "response cached update planned: " << std::this_thread::get_id();
 }
 
 }  // namespace tgnews
