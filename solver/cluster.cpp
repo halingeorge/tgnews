@@ -112,11 +112,13 @@ namespace tgnews {
     std::vector<Cluster> result;
     for (auto& c : ruCluster) {
       if (c.Size() > 0) {
+        c.Init();
         result.push_back(c);
       }
     }
     for (auto& c : enCluster) {
       if (c.Size() > 0) {
+        c.Init();
         result.push_back(c);
       }
     }
