@@ -47,7 +47,7 @@ namespace tgnews {
       for (const auto& d : Docs) {
         sum += d.Weight;
       }
-      return sum;
+      return sum * sqrt(Docs.size() + 1);;
     }
     uint64_t GetTime() const {
       return Time;

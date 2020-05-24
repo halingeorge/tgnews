@@ -201,7 +201,6 @@ void ParsedDoc::DetectCategory(const tgnews::Context& context) {
     return;
   }
   if (!GoodTitle.size() || !GoodText.size() || !Lang) {
-    std::cerr << "skipped by no title" << std::endl;
     Category = NC_UNDEFINED;
     return;
   }
