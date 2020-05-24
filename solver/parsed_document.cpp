@@ -165,6 +165,10 @@ nlohmann::json ParsedDoc::Serialize() const {
 
 
 void ParsedDoc::ParseLang(const fasttext::FastText* model) {
+  if (Lang) {
+    //already parsed - skip
+    return;
+  }
   std::string sample(Title + " " + Description + " " + Text.substr(0, 100));
   auto pair = RunFasttext(model, sample, 0.4);
   if (!pair) {
@@ -192,7 +196,12 @@ void ParsedDoc::Tokenize(const tgnews::Context& context) {
 }
 
 void ParsedDoc::DetectCategory(const tgnews::Context& context) {
+  if (Category != NC_UNDEFINED) {
+    // already has category - skip
+    return;
+  }
   if (!GoodTitle.size() || !GoodText.size() || !Lang) {
+    std::cerr << "skipped by no title" << std::endl;
     Category = NC_UNDEFINED;
     return;
   }
