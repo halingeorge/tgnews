@@ -1,4 +1,4 @@
-#include "solver/parsed_document.h"
+#include "base/parsed_document.h"
 
 #include "third_party/fastText/src/fasttext.h"
 #include "third_party/eigen/Eigen/Core"

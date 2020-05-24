@@ -63,7 +63,7 @@ class Worker {
     for (auto document : documents_) {
       MakeRequest([&] {
         PutRequest(*client_, document.name, document.content, document.max_age,
-                   "204 Created");
+                   "204 No Content");
       });
     }
     MakeRequest([&] {
@@ -81,7 +81,7 @@ class Worker {
     WaitForSubsetDocuments(*client_, GetDocumentNames(documents_));
     for (auto document : documents_) {
       MakeRequest([&] {
-        DeleteRequest(*client_, document.name, "404 No Content");
+        DeleteRequest(*client_, document.name, "404 Not Found");
       });
     }
     MakeRequest([&] {

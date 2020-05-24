@@ -14,7 +14,7 @@ class FileCache {
     return file_manager_->IsFileStillAlive(std::move(filename));
   }
 
-  std::vector<DocumentConstPtr> GetDocuments() {
+  std::vector<Document> GetDocuments() {
     return file_manager_->GetDocuments().apply(cti::transforms::wait());
   }
 

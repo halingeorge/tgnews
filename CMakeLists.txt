@@ -4,7 +4,6 @@ project(tgnews)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_FLAGS "-fPIC")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=thread")
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
@@ -12,8 +11,12 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif()
 
-set(Boost_USE_STATIC_LIBS ON)
-find_package(Boost 1.65.0 COMPONENTS filesystem system)
+if(APPLE)
+else()
+  set(CMAKE_CXX_FLAGS "-fPIC")
+  set(Boost_USE_STATIC_LIBS ON)
+  find_package(Boost COMPONENTS filesystem system)
+endif()
 
 set(BASEPATH "${CMAKE_SOURCE_DIR}")
 INCLUDE_DIRECTORIES("${BASEPATH}")

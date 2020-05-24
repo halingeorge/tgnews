@@ -17,7 +17,6 @@
 #include <vector>
 
 #include "base/base.h"
-#include "base/document.h"
 #include "base/time_helpers.h"
 #include "fmt/format.h"
 #include "glog/logging.h"
@@ -122,14 +121,14 @@ class FileManager {
   }
 
   auto GetDocuments() {
-    return cti::make_continuable<std::vector<DocumentConstPtr>>(
+    return cti::make_continuable<std::vector<Document>>(
         [this](auto&& promise) {
           std::experimental::dispatch(
               documents_strand_, [this, p = std::move(promise)]() mutable {
-                std::vector<DocumentConstPtr> documents;
+                std::vector<Document> documents;
                 documents.reserve(document_by_name_.size());
                 for (auto&[name, document_ptr] : document_by_name_) {
-                  documents.push_back(document_ptr);
+                  documents.push_back(*document_ptr);
                 }
 
                 p.set_value(std::move(documents));
@@ -180,7 +179,7 @@ class FileManager {
     value["deadline"] = document.deadline;
     value["content"] = document.content;
 
-    LOG(INFO) << "write json to file: " << value;
+    LOG(INFO) << "write json to file: " << value.size();
 
     boost::filesystem::ofstream file(filepath.data());
     file << value;

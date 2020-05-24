@@ -75,7 +75,7 @@ TEST_F(ServerTest, TestDeleteNonexistent) {
   SimpleWeb::Client<SimpleWeb::HTTP> client(
       fmt::format("localhost:{0}", kPort));
 
-  DeleteRequest(client, "nonexistent_document", "404 No Content");
+  DeleteRequest(client, "nonexistent_document", "404 Not Found");
 }
 
 TEST_F(ServerTest, TestPutAndRemoveDocuments) {
@@ -118,7 +118,7 @@ TEST_F(ServerTest, TestPutAndUpdateDocument) {
   for (size_t i = kRemoveDocuments; i < documents.size(); i++) {
     auto& document = documents[i];
     PutRequest(*client, document.name, document.content, document.max_age,
-               "204 Created");
+               "204 No Content");
   }
 
   EXPECT_TRUE(WaitForExactDocuments(
@@ -154,7 +154,7 @@ TEST_F(ServerTest, TestUpdateDeadline) {
   EXPECT_TRUE(WaitForExactDocuments(*client, {document.name}));
   document.max_age = 6s;
   PutRequest(*client, document.name, document.content, document.max_age,
-             "204 Created");
+             "204 No Content");
   EXPECT_TRUE(!WaitForExactDocuments(*client, {}));
   EXPECT_TRUE(WaitForExactDocuments(*client, {}));
 }

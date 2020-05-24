@@ -2,6 +2,8 @@
 
 #include <boost/lexical_cast.hpp>
 
+#include <regex>
+
 #include "base/base.h"
 #include "glog/logging.h"
 
@@ -123,12 +125,12 @@ void Server::SetupHandlers() {
              std::shared_ptr<HttpServer::Request> request) {
         auto stats_handler = std::make_shared<StatsHandler>(stats_);
 
-        cti::make_continuable<void>([=](auto&& promise) mutable {
+        try {
           file_manager_->RemoveOutdatedFiles();
 
           auto filename = request->path.substr(1);
           auto content = request->content.string();
-          LOG(WARNING) << "received put request: " << filename;
+          LOG(INFO) << "received put request: " << filename;
 
           auto content_type =
               GetHeaderValue<std::string_view>(request->header, "Content-Type");
@@ -142,18 +144,20 @@ void Server::SetupHandlers() {
 
           file_manager_->StoreOrUpdateFile(
                   std::move(filename), std::move(content), max_age).then([=](bool updated) {
-                uint32_t status_code = updated ? 204 : 201;
-                std::string data =
-                    fmt::format("HTTP/1.1 {0} Created\r\n\r\n", status_code);
-                response->write(data.data(), data.size());
+                response->write(updated ? SimpleWeb::StatusCode::success_no_content
+                                        : SimpleWeb::StatusCode::success_created);
+                response->flush();
                 stats_handler->OnSuccess();
 
                 UpdateResponseCache();
+
+                LOG(INFO) << "response sent";
               })
               .fail(OnFailCallback(response, stats_handler));
 
-          promise.set_value();
-        }).fail(OnFailCallback(response, stats_handler));
+        } catch (std::exception& e) {
+          OnFailCallback(response, stats_handler)(std::current_exception());
+        }
       };
 
   server_.resource["^/(.+)$"]["DELETE"] =
@@ -161,23 +165,24 @@ void Server::SetupHandlers() {
              std::shared_ptr<HttpServer::Request> request) {
         auto stats_handler = std::make_shared<StatsHandler>(stats_);
 
-        cti::make_continuable<void>([=](auto&& promise) mutable {
+        try {
           file_manager_->RemoveOutdatedFiles();
 
           auto filename = request->path.substr(1);
-          LOG(WARNING) << "received delete request: " << filename;
+          LOG(INFO) << "received delete request: " << filename;
           file_manager_->RemoveFile(filename).then([=](bool removed) {
-            uint32_t status_code = removed ? 204 : 404;
-            std::string data =
-                fmt::format("HTTP/1.1 {0} No Content\r\n\r\n", status_code);
-            response->write(data.data(), data.size());
+            response->write(removed ? SimpleWeb::StatusCode::success_no_content
+                                    : SimpleWeb::StatusCode::client_error_not_found);
+            response->flush();
             stats_handler->OnSuccess();
 
             UpdateResponseCache();
-          }).fail(OnFailCallback(response, stats_handler));
 
-          promise.set_value();
-        }).fail(OnFailCallback(response, stats_handler));
+            LOG(INFO) << "response sent";
+          }).fail(OnFailCallback(response, stats_handler));
+        } catch (std::exception& e) {
+          OnFailCallback(response, stats_handler)(std::current_exception());
+        }
       };
 
   server_.resource["^/threads$"]["GET"] =
@@ -185,12 +190,12 @@ void Server::SetupHandlers() {
              std::shared_ptr<HttpServer::Request> request) {
         auto stats_handler = std::make_shared<StatsHandler>(stats_);
 
-        cti::make_continuable<void>([=](auto&& promise) mutable {
+        try {
           file_manager_->RemoveOutdatedFiles();
 
           auto[period, lang_code, category] =
           ParseThreadsRequest(std::move(request->query_string));
-          LOG(WARNING) << fmt::format(
+          LOG(INFO) << fmt::format(
               "get threads with period={0} lang_code={1} category={2}", period,
               lang_code, category);
           GetDocumentThreads(period, lang_code, category)
@@ -199,10 +204,12 @@ void Server::SetupHandlers() {
                 headers.emplace("Content-type", "application/json");
                 response->write(value.dump(), headers);
                 stats_handler->OnSuccess();
-              }).fail(OnFailCallback(response, stats_handler));
 
-          promise.set_value();
-        }).fail(OnFailCallback(response, stats_handler));
+                LOG(INFO) << "response sent";
+              }).fail(OnFailCallback(response, stats_handler));
+        } catch (std::exception& e) {
+          OnFailCallback(response, stats_handler)(std::current_exception());
+        }
       };
 
   server_.default_resource["GET"] =
@@ -216,11 +223,11 @@ void Server::SetupHandlers() {
 cti::continuable<nlohmann::json> Server::GetDocumentThreads(
     uint64_t /*period*/, std::string /*lang_code*/, std::string /*category*/) {
   return file_manager_->GetDocuments().then(
-      [](std::vector<DocumentConstPtr> documents) {
+      [](std::vector<Document> documents) {
         nlohmann::json value;
         nlohmann::json articles = nlohmann::json::array();
         for (auto document_ptr : documents) {
-          articles.push_back(document_ptr->name);
+          articles.push_back(document_ptr.name);
         }
         value["articles"] = std::move(articles);
         LOG(INFO) << "GetDocumentThreads: " << value;
@@ -238,15 +245,18 @@ void Server::UpdateResponseCache() {
     }
     std::experimental::dispatch(
         responses_cache_strand_, [this, change_log = std::move(change_log)]() mutable {
-          LOG(WARNING) << "change log size: " << change_log.size() << " in: " << std::this_thread::get_id();
-          auto response_cache =
-              std::make_unique<CalculatedResponses>(response_builder_->AddDocuments(change_log));
+          std::unique_ptr<CalculatedResponses> responses_cache;
+          try {
+            responses_cache =
+                std::make_unique<CalculatedResponses>(response_builder_->AddDocuments(change_log));
+          } catch (std::exception& e) {
+            LOG(ERROR) << "AddDocuments exception caught: " << e.what();
+            return;
+          }
           std::unique_lock lock(responses_cache_mutex_);
-          responses_cache_ = std::move(response_cache);
-          LOG(WARNING) << "updated";
+          responses_cache_ = std::move(responses_cache);
         });
   });
-  LOG(WARNING) << "response cached update planned: " << std::this_thread::get_id();
 }
 
 }  // namespace tgnews

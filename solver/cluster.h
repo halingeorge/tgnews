@@ -1,6 +1,6 @@
 #pragma once
 
-#include "solver/parsed_document.h"
+#include "base/parsed_document.h"
 
 namespace tgnews {
 
