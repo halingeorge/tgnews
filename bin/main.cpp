@@ -29,17 +29,17 @@ int main(int argc, char** argv) {
 
   LOG(INFO) << fmt::format("Running mode - {}", mode);
 
+  tgnews::Context context(FLAGS_modelsPath, nullptr);
+  tgnews::ResponseBuilder responseBuilder(std::move(context));
+
   if (mode == "server") {
     int port = std::stoi(argv[2]);
     std::experimental::thread_pool pool(4);
     auto file_manager = std::make_unique<tgnews::FileManager>(pool);
-    tgnews::Server server(port, std::move(file_manager), pool);
+    tgnews::Server server(port, std::move(file_manager), pool, &responseBuilder);
     server.Run();
     return 0;
   }
-
-  tgnews::Context context(FLAGS_modelsPath, nullptr);
-  tgnews::ResponseBuilder responseBuilder(std::move(context));
 
   std::string content_dir = argv[2];
   auto docs = tgnews::MakeDocumentsFromDir(content_dir, FLAGS_docsCount);

@@ -137,6 +137,18 @@ class FileManager {
         });
   }
 
+  cti::continuable<std::vector<Document>> FetchChangeLog() {
+    return cti::make_continuable<std::vector<Document>>(
+        [this](auto&& promise) {
+          std::experimental::dispatch(
+              documents_strand_, [this, p = std::move(promise)]() mutable {
+                std::vector<Document> documents;
+                change_log_.swap(documents);
+                p.set_value(std::move(documents));
+              });
+        });
+  }
+
  private:
   auto CreateDocument(std::string filename, std::string content,
                       uint64_t deadline) {
@@ -151,6 +163,8 @@ class FileManager {
                 auto address = document_ptr.get();
 
                 LOG(INFO) << "create document: " << document_ptr->name;
+
+                change_log_.push_back(*document_ptr);
 
                 documents_with_deadline_.emplace(d, address);
                 document_by_name_.emplace(document_ptr->name, std::move(document_ptr));
@@ -216,6 +230,9 @@ class FileManager {
     }
 
     it->second->state = Document::State::Removed;
+
+    change_log_.emplace_back(it->second->name, /*content =*/ "", it->second->deadline, it->second->state);
+
     documents_with_deadline_.erase({it->second->deadline, it->second.get()});
     document_by_name_.erase(it);
     return true;
@@ -235,6 +252,8 @@ class FileManager {
                   document->content = std::move(c);
                   document->deadline = d;
                   document->state = Document::State::Changed;
+
+                  change_log_.push_back(*document);
 
                   documents_with_deadline_.emplace(document->deadline, document);
 
@@ -256,6 +275,7 @@ class FileManager {
 
  private:
   std::string content_dir_;
+  std::vector<Document> change_log_;
   std::unordered_map<std::string, std::shared_ptr<Document>> document_by_name_;
   std::set<std::pair<uint64_t, Document*>> documents_with_deadline_;
   std::experimental::strand<std::experimental::thread_pool::executor_type>

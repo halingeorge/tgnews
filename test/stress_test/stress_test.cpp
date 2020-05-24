@@ -114,7 +114,7 @@ int main(int argc, char** argv) {
 
   std::vector<TestDocument> documents;
   for (const auto& document : MakeDocumentsFromDir(FLAGS_content_path)) {
-    documents.push_back(TestDocument(document->name, document->content,
+    documents.push_back(TestDocument(document.name, document.content,
                                      std::chrono::seconds(60)));
   }
   LOG(INFO) << "document count: " << documents.size();

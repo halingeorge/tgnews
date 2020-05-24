@@ -92,8 +92,12 @@ auto OnFailCallback(std::shared_ptr<HttpServer::Response> response,
 }  // namespace
 
 Server::Server(uint32_t port, std::unique_ptr<FileManager> file_manager,
-               std::experimental::thread_pool& pool)
-    : port_(port), file_manager_(std::move(file_manager)), pool_(pool) {
+               std::experimental::thread_pool& pool, ResponseBuilder* response_builder)
+    : port_(port),
+      file_manager_(std::move(file_manager)),
+      responses_cache_strand_(pool.get_executor()),
+      response_builder_(response_builder),
+      pool_(pool) {
   server_.config.port = port;
 
   SetupHandlers();
@@ -144,11 +148,13 @@ void Server::SetupHandlers() {
                     fmt::format("HTTP/1.1 {0} Created\r\n\r\n", status_code);
                 response->write(data.data(), data.size());
                 stats_handler->OnSuccess();
+
+                UpdateResponseCache();
               })
               .fail(OnFailCallback(response, stats_handler));
 
           promise.set_value();
-        }).fail(OnFailCallback(std::move(response), std::move(stats_handler)));
+        }).fail(OnFailCallback(response, stats_handler));
       };
 
   server_.resource["^/(.+)$"]["DELETE"] =
@@ -167,10 +173,12 @@ void Server::SetupHandlers() {
                 fmt::format("HTTP/1.1 {0} No Content\r\n\r\n", status_code);
             response->write(data.data(), data.size());
             stats_handler->OnSuccess();
+
+            UpdateResponseCache();
           }).fail(OnFailCallback(response, stats_handler));
 
           promise.set_value();
-        }).fail(OnFailCallback(std::move(response), std::move(stats_handler)));
+        }).fail(OnFailCallback(response, stats_handler));
       };
 
   server_.resource["^/threads$"]["GET"] =
@@ -195,7 +203,7 @@ void Server::SetupHandlers() {
               }).fail(OnFailCallback(response, stats_handler));
 
           promise.set_value();
-        }).fail(OnFailCallback(std::move(response), std::move(stats_handler)));
+        }).fail(OnFailCallback(response, stats_handler));
       };
 
   server_.default_resource["GET"] =
@@ -219,6 +227,24 @@ cti::continuable<nlohmann::json> Server::GetDocumentThreads(
         LOG(INFO) << "GetDocumentThreads: " << value;
         return value;
       });
+}
+
+void Server::UpdateResponseCache() {
+  if (!response_builder_) {
+    return;
+  }
+  file_manager_->FetchChangeLog().then([=](std::vector<Document> change_log) {
+    if (change_log.empty()) {
+      return;
+    }
+    std::experimental::dispatch(
+        responses_cache_strand_, [this, change_log = std::move(change_log)]() mutable {
+          auto response_cache =
+              std::make_unique<CalculatedResponses>(response_builder_->AddDocuments(change_log));
+          std::unique_lock lock(responses_cache_mutex_);
+          responses_cache_ = std::move(response_cache);
+        });
+  });
 }
 
 }  // namespace tgnews
