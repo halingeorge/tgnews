@@ -1,7 +1,7 @@
 #include "server/server.h"
 
 #include <boost/lexical_cast.hpp>
-
+#include <experimental/timer>
 #include <regex>
 
 #include "base/base.h"
@@ -17,13 +17,13 @@ void ParseResult(std::string_view data, std::string_view& result) {
   result = data;
 }
 
-template<typename T>
+template <typename T>
 void ParseResult(std::string_view data, T& result) {
   LOG(INFO) << "parse string to T: " << data;
   result = boost::lexical_cast<T>(data);
 }
 
-template<typename T>
+template <typename T>
 T GetHeaderValue(const SimpleWeb::CaseInsensitiveMultimap& headers,
                  std::string_view header_key) {
   LOG(INFO) << "get header value for key: " << header_key;
@@ -76,15 +76,15 @@ struct StatsHandler {
 
 auto OnFailCallback(std::shared_ptr<HttpServer::Response> response,
                     std::shared_ptr<StatsHandler> stats_handler) {
-  return [r = std::move(response), h = std::move(stats_handler)](std::exception_ptr ptr) {
+  return [r = std::move(response),
+          h = std::move(stats_handler)](std::exception_ptr ptr) {
     if (ptr) {
       try {
         std::rethrow_exception(ptr);
       } catch (std::exception& e) {
         LOG(ERROR) << "exception caught: " << e.what();
-        r->write(
-            SimpleWeb::StatusCode::server_error_internal_server_error,
-            e.what());
+        r->write(SimpleWeb::StatusCode::server_error_internal_server_error,
+                 e.what());
         h->OnFailure();
       }
     }
@@ -94,7 +94,8 @@ auto OnFailCallback(std::shared_ptr<HttpServer::Response> response,
 }  // namespace
 
 Server::Server(uint32_t port, std::unique_ptr<FileManager> file_manager,
-               std::experimental::thread_pool& pool, ResponseBuilder* response_builder)
+               std::experimental::thread_pool& pool,
+               ResponseBuilder* response_builder)
     : port_(port),
       file_manager_(std::move(file_manager)),
       responses_cache_strand_(pool.get_executor()),
@@ -103,6 +104,10 @@ Server::Server(uint32_t port, std::unique_ptr<FileManager> file_manager,
   server_.config.port = port;
 
   SetupHandlers();
+
+  std::experimental::dispatch_after(std::chrono::seconds(5),
+                                    responses_cache_strand_,
+                                    [this]() { UpdateResponseCache(); });
 }
 
 Server::~Server() { Stop(); }
@@ -142,14 +147,15 @@ void Server::SetupHandlers() {
           uint64_t max_age;
           ParseResult(cache_control_str.substr(8), max_age);
 
-          file_manager_->StoreOrUpdateFile(
-                  std::move(filename), std::move(content), max_age).then([=](bool updated) {
-                response->write(updated ? SimpleWeb::StatusCode::success_no_content
-                                        : SimpleWeb::StatusCode::success_created);
+          file_manager_
+              ->StoreOrUpdateFile(std::move(filename), std::move(content),
+                                  max_age)
+              .then([=](bool updated) {
+                response->write(updated
+                                    ? SimpleWeb::StatusCode::success_no_content
+                                    : SimpleWeb::StatusCode::success_created);
                 response->flush();
                 stats_handler->OnSuccess();
-
-                UpdateResponseCache();
 
                 LOG(INFO) << "response sent";
               })
@@ -170,16 +176,17 @@ void Server::SetupHandlers() {
 
           auto filename = request->path.substr(1);
           LOG(INFO) << "received delete request: " << filename;
-          file_manager_->RemoveFile(filename).then([=](bool removed) {
-            response->write(removed ? SimpleWeb::StatusCode::success_no_content
-                                    : SimpleWeb::StatusCode::client_error_not_found);
-            response->flush();
-            stats_handler->OnSuccess();
+          file_manager_->RemoveFile(filename)
+              .then([=](bool removed) {
+                response->write(
+                    removed ? SimpleWeb::StatusCode::success_no_content
+                            : SimpleWeb::StatusCode::client_error_not_found);
+                response->flush();
+                stats_handler->OnSuccess();
 
-            UpdateResponseCache();
-
-            LOG(INFO) << "response sent";
-          }).fail(OnFailCallback(response, stats_handler));
+                LOG(INFO) << "response sent";
+              })
+              .fail(OnFailCallback(response, stats_handler));
         } catch (std::exception& e) {
           OnFailCallback(response, stats_handler)(std::current_exception());
         }
@@ -193,8 +200,8 @@ void Server::SetupHandlers() {
         try {
           file_manager_->RemoveOutdatedFiles();
 
-          auto[period, lang_code, category] =
-          ParseThreadsRequest(std::move(request->query_string));
+          auto [period, lang_code, category] =
+              ParseThreadsRequest(std::move(request->query_string));
           LOG(INFO) << fmt::format(
               "get threads with period={0} lang_code={1} category={2}", period,
               lang_code, category);
@@ -206,7 +213,8 @@ void Server::SetupHandlers() {
                 stats_handler->OnSuccess();
 
                 LOG(INFO) << "response sent";
-              }).fail(OnFailCallback(response, stats_handler));
+              })
+              .fail(OnFailCallback(response, stats_handler));
         } catch (std::exception& e) {
           OnFailCallback(response, stats_handler)(std::current_exception());
         }
@@ -239,23 +247,28 @@ void Server::UpdateResponseCache() {
   if (!response_builder_) {
     return;
   }
-  file_manager_->FetchChangeLog().then([=](std::vector<Document> change_log) {
+
+  std::experimental::dispatch_after(std::chrono::seconds(5),
+                                    responses_cache_strand_,
+                                    [this]() { UpdateResponseCache(); });
+
+  file_manager_->FetchChangeLog().then([this](auto change_log) {
     if (change_log.empty()) {
       return;
     }
-    std::experimental::dispatch(
-        responses_cache_strand_, [this, change_log = std::move(change_log)]() mutable {
-          std::unique_ptr<CalculatedResponses> responses_cache;
-          try {
-            responses_cache =
-                std::make_unique<CalculatedResponses>(response_builder_->AddDocuments(change_log));
-          } catch (std::exception& e) {
-            LOG(ERROR) << "AddDocuments exception caught: " << e.what();
-            return;
-          }
-          std::unique_lock lock(responses_cache_mutex_);
-          responses_cache_ = std::move(responses_cache);
-        });
+    LOG(INFO) << "change log size: " << change_log.size();
+
+    std::unique_ptr<CalculatedResponses> responses_cache;
+    try {
+      responses_cache = std::make_unique<CalculatedResponses>(
+          response_builder_->AddDocuments(change_log));
+    } catch (std::exception& e) {
+      LOG(ERROR) << "AddDocuments exception caught: " << e.what();
+      return;
+    }
+
+    std::unique_lock lock(responses_cache_mutex_);
+    responses_cache_ = std::move(responses_cache);
   });
 }
 
