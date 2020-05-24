@@ -180,7 +180,7 @@ class FileManager {
     value["deadline"] = document.deadline;
     value["content"] = document.content;
 
-    LOG(INFO) << "write json to file: " << value;
+    LOG(INFO) << "write json to file: " << value.size();
 
     boost::filesystem::ofstream file(filepath.data());
     file << value;

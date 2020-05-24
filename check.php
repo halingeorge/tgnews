@@ -25,7 +25,7 @@
 define('CURL_VERBOSE',    false);
 define('BINARY_OUTPUT',   true);
 define('JSON_THROW_ON_ERROR', true);
-define('HTTP_SERVER_LOG', '/dev/null');
+define('HTTP_SERVER_LOG', '/tmp/tgnews');
 
 
 
