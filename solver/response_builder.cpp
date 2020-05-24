@@ -130,7 +130,10 @@ CalculatedResponses::CalculatedResponses(const std::vector<tgnews::ParsedDoc>& d
   NewsAns = CalcNewsAns(docs);
   CategoryAns = CalcCategoryAns(docs);
   ThreadsAns = CalcThreadsAns(clustering);
-  uint64_t now = std::max_element(clustering.begin(), clustering.end(), [](const auto& l, const auto& r) {return l.GetTime() < r.GetTime();})->GetTime();
+  uint64_t now = 0;
+  if (clustering.size()) {
+    now = std::max_element(clustering.begin(), clustering.end(), [](const auto& l, const auto& r) {return l.GetTime() < r.GetTime();})->GetTime();
+  }
   size_t durIdx = 0;
   for (const auto& duration : Discretization) {
     using WeightWithIdx = std::pair<float, size_t>;
