@@ -202,10 +202,14 @@ class FileManager {
     for (const auto& entry : boost::make_iterator_range(
         boost::filesystem::directory_iterator(path), {})) {
       boost::filesystem::ifstream file(entry.path());
-
       nlohmann::json value;
-      file >> value;
-
+      try {
+        file >> value;
+      } catch (...) {
+        RemoveFileFromDisk(entry.path());
+        LOG(INFO) << "file contains invalid json " << entry.path();
+        continue;
+      }
       auto deadline = value["deadline"].get<uint64_t>();
       auto content = value["content"].get<std::string>();
 
