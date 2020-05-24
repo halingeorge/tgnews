@@ -1,5 +1,7 @@
 #include "base/context.h"
 
+#include "glog/logging.h"
+
 #include <fstream>
 
 namespace {
@@ -53,8 +55,12 @@ Context::Context(const std::string modelPath, std::unique_ptr<FileCache> fileCac
   , Tokenizer(onmt::Tokenizer::Mode::Conservative, onmt::Tokenizer::Flags::CaseFeature)
   , Ratings(modelPath + "/pagerank_rating.txt")
 {
+  LOG(INFO) << "context ctr";
+  LOG(INFO) << "loading lang detect model";
   LangDetect = std::make_unique<fasttext::FastText>();
   LangDetect->loadModel(modelPath + "/lang_detect.ftz");
+  LOG(INFO) << "loaded";
+  LOG(INFO) << "load ru cat model";
   RuCatModel = std::make_unique<fasttext::FastText>();
   RuCatModel->loadModel(modelPath + "/ru_cat_v2.ftz");
   EnCatModel = std::make_unique<fasttext::FastText>();

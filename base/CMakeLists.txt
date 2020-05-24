@@ -17,5 +17,5 @@ add_library(base STATIC ${SRCS})
 
 find_package(Boost COMPONENTS filesystem REQUIRED)
 
-target_link_libraries(base continuable executors_lib glog gflags eigen fasttext-static OpenNMTTokenizer fmt ${Boost_FILESYSTEM_LIBRARY})
+target_link_libraries(base continuable executors_lib glog gflags eigen fasttext-static OpenNMTTokenizer fmt ${Boost_LIBRARIES})
 add_dependencies(base executors)

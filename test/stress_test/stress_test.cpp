@@ -108,6 +108,7 @@ class Worker {
 int main(int argc, char** argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, false);
 
+  FLAGS_minloglevel = 1;
   FLAGS_logtostderr = FLAGS_log_to_stderr;
 
   google::InitGoogleLogging(argv[0]);
