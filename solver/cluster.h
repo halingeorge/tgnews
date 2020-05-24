@@ -30,30 +30,44 @@ namespace tgnews {
     }
 
     ENewsCategory GetCategory() const {
-      std::vector<size_t> categoryCount(NC_COUNT);
-      for (const auto& doc : Docs) {
-        ENewsCategory docCategory = doc.Category;
-        assert(docCategory != NC_UNDEFINED && docCategory != NC_NOT_NEWS);
-        categoryCount[static_cast<size_t>(docCategory)] += 1;
+      if (!Init_) {
+        std::vector<size_t> categoryCount(NC_COUNT);
+        for (const auto& doc : Docs) {
+          ENewsCategory docCategory = doc.Category;
+          assert(docCategory != NC_UNDEFINED && docCategory != NC_NOT_NEWS);
+          categoryCount[static_cast<size_t>(docCategory)] += 1;
+        }
+        auto it = std::max_element(categoryCount.begin(), categoryCount.end());
+        return static_cast<ENewsCategory>(std::distance(categoryCount.begin(), it));
       }
-      auto it = std::max_element(categoryCount.begin(), categoryCount.end());
-      return static_cast<ENewsCategory>(std::distance(categoryCount.begin(), it));
+      return Category_;
     }
     void Sort() {
       sort(Docs.begin(), Docs.end(), [](const auto& l, const auto& r) {return l.Weight > r.Weight;});
     }
     float Weight() const {
-      float sum = 0.f;
-      for (const auto& d : Docs) {
-        sum += d.Weight;
+      if (!Init_) {
+        float sum = 0.f;
+        for (const auto& d : Docs) {
+          sum += d.Weight;
+        }
+        return sum * sqrt(Docs.size() + 1);;
       }
-      return sum * sqrt(Docs.size() + 1);;
+      return Weight_;
     }
     uint64_t GetTime() const {
       return Time;
     }
+    void Init() {
+      Category_ = GetCategory();
+      Weight_ = Weight();
+      Init_ = true;
+    }
   private:
-    uint64_t Time; 
+    uint64_t Time;
+    bool Init_;
+    float Weight_;
+    ENewsCategory Category_;
     std::vector<ParsedDoc> Docs;
   };
 
