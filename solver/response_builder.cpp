@@ -194,10 +194,10 @@ nlohmann::json CalculatedResponses::GetAns(const std::string& lang, const std::s
 
 ResponseBuilder::ResponseBuilder(tgnews::Context context) : Context(std::move(context)) {}
 
-CalculatedResponses ResponseBuilder::AddDocuments(const std::vector<DocumentConstPtr>& docs) {
+CalculatedResponses ResponseBuilder::AddDocuments(const std::vector<Document>& docs) {
   std::cerr << docs.size() << " - docs size" << std::endl;
   for (const auto& doc : docs) {
-    Docs.emplace_back(*doc);
+    Docs.emplace_back(doc);
   }
   {
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();

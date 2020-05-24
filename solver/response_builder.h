@@ -1,3 +1,4 @@
+#pragma once
 #include "parsed_document.h"
 #include "cluster.h"
 
@@ -26,7 +27,7 @@ class CalculatedResponses {
 class ResponseBuilder {
  public:
   ResponseBuilder(tgnews::Context context);
-  CalculatedResponses AddDocuments(const std::vector<DocumentConstPtr>& docs);
+  CalculatedResponses AddDocuments(const std::vector<Document>& docs);
 
  private:
   std::vector<tgnews::ParsedDoc> Docs;
