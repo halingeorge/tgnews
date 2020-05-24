@@ -1,8 +1,11 @@
 cmake_minimum_required(VERSION 3.15)
 
 SET(BUILD_TESTING OFF)
-
 SET(function2_DIR third_party/function2)
+
+# tinyxml2
+set(BUILD_SHARED_LIBS OFF)
+set(BUILD_STATIC_LIBS ON)
 
 include(ExternalProject)
 install(SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/executors/autogen.sh)

@@ -198,7 +198,7 @@ nlohmann::json CalculatedResponses::GetAns(const std::string& lang, const std::s
 ResponseBuilder::ResponseBuilder(tgnews::Context context) : Context(std::move(context)) {}
 
 CalculatedResponses ResponseBuilder::AddDocuments(const std::vector<Document>& docs) {
-  std::cerr << docs.size() << " - docs size" << std::endl;
+  LOG(INFO) << docs.size() << " - docs size";
   for (const auto& doc : docs) {
     Docs.emplace_back(doc);
   }
@@ -211,7 +211,7 @@ CalculatedResponses ResponseBuilder::AddDocuments(const std::vector<Document>& d
       doc.CalcWeight(Context);
     }
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-    std::cerr << "Time difference categorization = " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << "[milli]" << std::endl;
+    LOG(INFO) << "Time difference categorization = " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << "[milli]";
   }
   auto ruEmbedder = Embedder(Context.RuCatModel.get(), Context.RuMatrix, Context.RuBias);
   auto enEmbedder = Embedder(Context.EnCatModel.get(), Context.EnMatrix, Context.EnBias);
@@ -226,7 +226,7 @@ CalculatedResponses ResponseBuilder::AddDocuments(const std::vector<Document>& d
     }
     std::vector<Cluster> clustering = RunClustering(Docs);
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-    std::cerr << "Time difference clustering = " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << "[milli]" << std::endl;
+    LOG(INFO) << "Time difference clustering = " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << "[milli]";
     return {Docs, clustering};
   }
 }

@@ -17,7 +17,8 @@ DEFINE_int32(docsCount, -1, "how much docs to read, -1 to read all");
 int main(int argc, char** argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, false);
 
-  FLAGS_minloglevel = 0;
+  FLAGS_minloglevel = 1;
+  FLAGS_logtostderr = true;
 
   google::InitGoogleLogging(argv[0]);
 
@@ -30,10 +31,16 @@ int main(int argc, char** argv) {
   LOG(INFO) << fmt::format("Running mode - {}", mode);
 
   tgnews::Context context(FLAGS_modelsPath, nullptr);
+
+  LOG(INFO) << "context loaded";
+
   tgnews::ResponseBuilder responseBuilder(std::move(context));
+
+  LOG(INFO) << "response builder created";
 
   if (mode == "server") {
     int port = std::stoi(argv[2]);
+    LOG(INFO) << fmt::format("prepare to run on port: {}", port);
     std::experimental::thread_pool pool(4);
     auto file_manager = std::make_unique<tgnews::FileManager>(pool);
     tgnews::Server server(port, std::move(file_manager), pool, &responseBuilder);
