@@ -128,8 +128,7 @@ void Server::SetupHandlers() {
 
           auto filename = request->path.substr(1);
           auto content = request->content.string();
-          LOG(INFO) << "received put request: " << filename;
-          LOG(INFO) << "file content: " << content;
+          LOG(WARNING) << "received put request: " << filename;
 
           auto content_type =
               GetHeaderValue<std::string_view>(request->header, "Content-Type");
@@ -166,7 +165,7 @@ void Server::SetupHandlers() {
           file_manager_->RemoveOutdatedFiles();
 
           auto filename = request->path.substr(1);
-          LOG(INFO) << "received delete request: " << filename;
+          LOG(WARNING) << "received delete request: " << filename;
           file_manager_->RemoveFile(filename).then([=](bool removed) {
             uint32_t status_code = removed ? 204 : 404;
             std::string data =
@@ -191,7 +190,7 @@ void Server::SetupHandlers() {
 
           auto[period, lang_code, category] =
           ParseThreadsRequest(std::move(request->query_string));
-          LOG(INFO) << fmt::format(
+          LOG(WARNING) << fmt::format(
               "get threads with period={0} lang_code={1} category={2}", period,
               lang_code, category);
           GetDocumentThreads(period, lang_code, category)
@@ -239,12 +238,15 @@ void Server::UpdateResponseCache() {
     }
     std::experimental::dispatch(
         responses_cache_strand_, [this, change_log = std::move(change_log)]() mutable {
+          LOG(WARNING) << "change log size: " << change_log.size() << " in: " << std::this_thread::get_id();
           auto response_cache =
               std::make_unique<CalculatedResponses>(response_builder_->AddDocuments(change_log));
           std::unique_lock lock(responses_cache_mutex_);
           responses_cache_ = std::move(response_cache);
+          LOG(WARNING) << "updated";
         });
   });
+  LOG(WARNING) << "response cached update planned: " << std::this_thread::get_id();
 }
 
 }  // namespace tgnews
