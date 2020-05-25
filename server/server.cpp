@@ -74,6 +74,18 @@ struct StatsHandler {
   std::atomic<size_t> replies = 0;
 };
 
+auto OnFailCallback() {
+  return [](std::exception_ptr ptr) {
+    if (ptr) {
+      try {
+        std::rethrow_exception(ptr);
+      } catch (std::exception& e) {
+        LOG(ERROR) << "exception caught: " << e.what();
+      }
+    }
+  };
+}
+
 auto OnFailCallback(std::shared_ptr<HttpServer::Response> response,
                     std::shared_ptr<StatsHandler> stats_handler) {
   return [r = std::move(response),
@@ -129,7 +141,7 @@ void Server::SetupHandlers() {
         auto stats_handler = std::make_shared<StatsHandler>(stats_);
 
         try {
-          file_manager_->RemoveOutdatedFiles();
+          file_manager_->RemoveOutdatedFiles().fail(OnFailCallback());
 
           auto filename = request->path.substr(1);
           auto content = request->content.string();
@@ -170,7 +182,7 @@ void Server::SetupHandlers() {
         auto stats_handler = std::make_shared<StatsHandler>(stats_);
 
         try {
-          file_manager_->RemoveOutdatedFiles();
+          file_manager_->RemoveOutdatedFiles().fail(OnFailCallback());
 
           auto filename = request->path.substr(1);
           LOG(INFO) << "received delete request: " << filename;
@@ -196,7 +208,7 @@ void Server::SetupHandlers() {
         auto stats_handler = std::make_shared<StatsHandler>(stats_);
 
         try {
-          file_manager_->RemoveOutdatedFiles();
+          file_manager_->RemoveOutdatedFiles().fail(OnFailCallback());
 
           LOG(INFO) << "get threads: " << request->query_string;
 
@@ -288,8 +300,8 @@ void Server::UpdateResponseCache() {
                                       [this]() { UpdateResponseCache(); });
   };
 
-  file_manager_->FetchChangeLog().then(
-      [this, repeat = std::move(repeat)](auto change_log) {
+  file_manager_->FetchChangeLog()
+      .then([this, repeat = std::move(repeat)](auto change_log) {
         if (change_log.empty()) {
           repeat();
           return;
@@ -313,7 +325,8 @@ void Server::UpdateResponseCache() {
               std::unique_lock lock(responses_cache_mutex_);
               responses_cache_ = std::move(responses_cache);
             });
-      });
+      })
+      .fail(OnFailCallback());
 }
 
 }  // namespace tgnews

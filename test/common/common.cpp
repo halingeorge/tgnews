@@ -109,7 +109,7 @@ std::vector<std::string> GetArticles(
     std::stringstream thread_id;
     thread_id << std::this_thread::get_id();
     auto timer_updater_name =
-        fmt::format("/timer_updater_{}.html", thread_id.str());
+        fmt::format("timer_updater_{}.html", thread_id.str());
 
     PutRequest(client, timer_updater_name, MakeXmlDocument(),
                std::chrono::seconds(60));
