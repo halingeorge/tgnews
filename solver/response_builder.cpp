@@ -219,7 +219,18 @@ ResponseBuilder::ResponseBuilder(tgnews::Context context)
 CalculatedResponses ResponseBuilder::AddDocuments(std::vector<ParsedDoc> docs) {
   LOG(INFO) << docs.size() << " - docs size";
   for (auto&& doc : docs) {
-    Docs.push_back(std::move(doc));
+    if (doc.State == ParsedDoc::EState::Added) {
+      Docs.push_back(std::move(doc));
+    } else if (doc.State == ParsedDoc::EState::Removed) {
+      size_t idx = std::distance(Docs.begin(), std::find_if(Docs.begin(), Docs.end(), [doc](const auto& d) { return d.FileName == doc.FileName;}));
+      if (idx != Docs.size()) {
+        std::swap(Docs[idx], Docs[Docs.size() - 1]);
+        Docs.pop_back();
+      }
+    } else if (doc.State == ParsedDoc::EState::Changed) {
+      size_t idx = std::distance(Docs.begin(), std::find_if(Docs.begin(), Docs.end(), [doc](const auto& d) { return d.FileName == doc.FileName;}));
+      Docs[idx] = doc;
+    }
   }
   {
     std::chrono::steady_clock::time_point begin =

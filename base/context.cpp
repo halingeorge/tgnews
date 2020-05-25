@@ -3,6 +3,7 @@
 #include "glog/logging.h"
 
 #include <fstream>
+#include <chrono>
 
 namespace {
 
@@ -55,12 +56,10 @@ Context::Context(const std::string modelPath, std::unique_ptr<FileCache> fileCac
   , Tokenizer(onmt::Tokenizer::Mode::Conservative, onmt::Tokenizer::Flags::CaseFeature)
   , Ratings(modelPath + "/pagerank_rating.txt")
 {
-  LOG(INFO) << "context ctr";
-  LOG(INFO) << "loading lang detect model";
+  LOG(INFO) << "Context loading";
+  std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
   LangDetect = std::make_unique<fasttext::FastText>();
   LangDetect->loadModel(modelPath + "/lang_detect.ftz");
-  LOG(INFO) << "loaded";
-  LOG(INFO) << "load ru cat model";
   RuCatModel = std::make_unique<fasttext::FastText>();
   RuCatModel->loadModel(modelPath + "/ru_cat_v2.ftz");
   EnCatModel = std::make_unique<fasttext::FastText>();
@@ -81,6 +80,8 @@ Context::Context(const std::string modelPath, std::unique_ptr<FileCache> fileCac
 
   EnBias = Eigen::VectorXf(50);
   LoadBiasFromFile(EnBias, modelPath + "/en_sentence_embedder/bias.txt");
+  std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+  LOG(INFO) << "Time difference loading models = " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << "[milli]";
 }
 
 }
