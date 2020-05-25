@@ -187,8 +187,8 @@ nlohmann::json CalculatedResponses::GetAns(const std::string& lang, const std::s
     throw std::runtime_error("unknown cat");
   }
   size_t langIdx = LangCount;
-  if (lang == "ru") catIdx = LangRu;
-  if (lang == "en") catIdx = LangEn;
+  if (lang == "ru") langIdx = LangRu;
+  if (lang == "en") langIdx = LangEn;
   if (langIdx == LangCount) {
     throw std::runtime_error("unknown lang");
   }
