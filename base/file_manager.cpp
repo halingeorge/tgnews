@@ -184,8 +184,11 @@ void FileManager::RestoreFiles() {
       RemoveFileFromDisk(entry.path());
       continue;
     }
-
-    EmplaceDocumentSync(std::make_unique<ParsedDoc>(std::move(value)));
+    try {
+      EmplaceDocumentSync(std::make_unique<ParsedDoc>(std::move(value)));
+    } catch (...) {
+      LOG(INFO) << "Cannot deserialize json to ParsedDoc";
+    }
   }
 
   LOG(INFO) << "restored file count: " << document_by_name_.size();
