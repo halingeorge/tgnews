@@ -105,9 +105,7 @@ Server::Server(uint32_t port, std::unique_ptr<FileManager> file_manager,
 
   SetupHandlers();
 
-  std::experimental::dispatch_after(std::chrono::seconds(5),
-                                    responses_cache_strand_,
-                                    [this]() { UpdateResponseCache(); });
+  UpdateResponseCache();
 }
 
 Server::~Server() { Stop(); }
@@ -248,28 +246,38 @@ void Server::UpdateResponseCache() {
     return;
   }
 
-  std::experimental::dispatch_after(std::chrono::seconds(5),
-                                    responses_cache_strand_,
-                                    [this]() { UpdateResponseCache(); });
+  auto repeat = [this] {
+    std::experimental::dispatch_after(std::chrono::seconds(5),
+                                      responses_cache_strand_,
+                                      [this]() { UpdateResponseCache(); });
+  };
 
-  file_manager_->FetchChangeLog().then([this](auto change_log) {
-    if (change_log.empty()) {
-      return;
-    }
-    LOG(INFO) << "change log size: " << change_log.size();
+  file_manager_->FetchChangeLog().then(
+      [this, repeat = std::move(repeat)](auto change_log) {
+        if (change_log.empty()) {
+          repeat();
+          return;
+        }
+        std::experimental::dispatch(
+            responses_cache_strand_, [this, repeat = std::move(repeat),
+                                      change_log = std::move(change_log)] {
+              LOG(INFO) << "change log size: " << change_log.size();
 
-    std::unique_ptr<CalculatedResponses> responses_cache;
-    try {
-      responses_cache = std::make_unique<CalculatedResponses>(
-          response_builder_->AddDocuments(change_log));
-    } catch (std::exception& e) {
-      LOG(ERROR) << "AddDocuments exception caught: " << e.what();
-      return;
-    }
+              repeat();
 
-    std::unique_lock lock(responses_cache_mutex_);
-    responses_cache_ = std::move(responses_cache);
-  });
+              std::unique_ptr<CalculatedResponses> responses_cache;
+              try {
+                responses_cache = std::make_unique<CalculatedResponses>(
+                    response_builder_->AddDocuments(change_log));
+              } catch (std::exception& e) {
+                LOG(ERROR) << "AddDocuments exception caught: " << e.what();
+                return;
+              }
+
+              std::unique_lock lock(responses_cache_mutex_);
+              responses_cache_ = std::move(responses_cache);
+            });
+      });
 }
 
 }  // namespace tgnews
