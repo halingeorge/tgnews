@@ -130,6 +130,36 @@ nlohmann::json CalcThreadsAns(const std::vector<Cluster>& clusters) {
 
 namespace tgnews {
 
+CalculatedResponses::CalculatedResponses(const std::string& path) {
+  std::ifstream ss(path);
+  ss >> LangAns;
+  ss >> NewsAns;
+  ss >> CategoryAns;
+  ss >> ThreadsAns;
+  for (size_t durIdx = 0; durIdx < DiscretizationSize; ++durIdx) {
+    for (size_t catIdx = 0; catIdx < NC_COUNT; ++catIdx) {
+      for (size_t langIdx = 0; langIdx < LangCount; ++langIdx) {
+        ss >> Answers[durIdx][catIdx][langIdx];
+      }
+    }
+  }
+}
+
+void CalculatedResponses::dump(const std::string& path) {
+  std::ofstream ss(path);
+  ss << LangAns;
+  ss << NewsAns;
+  ss << CategoryAns;
+  ss << ThreadsAns;
+  for (size_t durIdx = 0; durIdx < DiscretizationSize; ++durIdx) {
+    for (size_t catIdx = 0; catIdx < NC_COUNT; ++catIdx) {
+      for (size_t langIdx = 0; langIdx < LangCount; ++langIdx) {
+        ss << Answers[durIdx][catIdx][langIdx];
+      }
+    }
+  }
+}
+
 CalculatedResponses::CalculatedResponses(
     const std::vector<tgnews::ParsedDoc>& docs,
     const std::vector<Cluster>& clustering) {
@@ -152,14 +182,18 @@ CalculatedResponses::CalculatedResponses(
         weights;
     for (size_t clusterIdx = 0; clusterIdx < clustering.size(); ++clusterIdx) {
       const auto& c = clustering[clusterIdx];
-      if (c.GetTime() + duration < now) {
+      if (c.GetTime() + 2 * duration < now) {
         continue;  // cause clusters sorted (by freshness)
       }
       size_t catIdx = static_cast<size_t>(c.GetCategory());
       size_t langIdx = static_cast<size_t>(c.GetEnumLang());
-      weights[catIdx][langIdx].push_back({c.Weight(), clusterIdx});
+      float clusterWeight = c.Weight();
+      if (c.GetTime() + duration >= now) {
+        clusterWeight *= 1.5;
+      }
+      weights[catIdx][langIdx].push_back({clusterWeight, clusterIdx});
       weights[static_cast<size_t>(NC_ANY)][langIdx].push_back(
-          {c.Weight(), clusterIdx});
+          {clusterWeight, clusterIdx});
     }
     for (size_t catIdx = 0; catIdx < NC_COUNT; catIdx++) {
       for (size_t langIdx = 0; langIdx < LangCount; ++langIdx) {
@@ -220,6 +254,7 @@ nlohmann::json CalculatedResponses::GetAns(const std::string& lang,
   }
   return Answers[idx][catIdx][langIdx];
 }
+
 
 ResponseBuilder::ResponseBuilder(tgnews::Context* context)
     : Context(context) {}
