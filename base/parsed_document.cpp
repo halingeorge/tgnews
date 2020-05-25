@@ -7,10 +7,11 @@
 #include <ctime>
 #include <regex>
 #include <stdexcept>
+#include <sstream>
 
 #include "run_fasttext.h"
 
-static uint64_t DateToTimestamp(const std::string& date) {
+static uint64_t DateToTimestampFuckedup(const std::string& date) {
   std::regex ex(
       "(\\d\\d\\d\\d)-(\\d\\d)-(\\d\\d)T(\\d\\d):(\\d\\d):(\\d\\d)([+-])("
       "\\d\\d):(\\d\\d)");
@@ -31,6 +32,55 @@ static uint64_t DateToTimestamp(const std::string& date) {
   if (what[7] == "+") {
     timestamp = timestamp - zone_ts;
   } else if (what[7] == "-") {
+    timestamp = timestamp + zone_ts;
+  }
+  return timestamp > 0 ? timestamp : 0;
+}
+
+static uint64_t DateToTimestamp(const std::string& date) {
+  std::stringstream ss(date);
+  char sep;
+  std::tm t = {};
+  ss >> t.tm_year;
+  t.tm_year -= 1900;
+  ss >> sep;
+  if (sep != '-') {
+    throw std::runtime_error("wrong date format");
+  }
+  ss >> t.tm_mon;
+  t.tm_mon -= 1;
+  ss >> sep;
+  if (sep != '-') {
+    throw std::runtime_error("wrong date format");
+  }
+  ss >> t.tm_mday;
+  ss >> sep;
+  if (sep != 'T') {
+    throw std::runtime_error("wrong date format");
+  }
+  ss >> t.tm_hour;
+  ss >> sep;
+  if (sep != ':') {
+    throw std::runtime_error("wrong date format");
+  }
+  ss >> t.tm_min;
+  ss >> sep;
+  if (sep != ':') {
+    throw std::runtime_error("wrong date format");
+  }
+  ss >> t.tm_sec;
+  char p;
+  ss >> p;
+  if (p != '+' && p != '-') {
+    throw std::runtime_error("wrong date format");
+  }
+  int h_z, h_m;
+  ss >> h_z >> sep >> h_m;
+  time_t timestamp = timegm(&t);
+  uint64_t zone_ts = h_z * 60 * 60 + h_m * 60;
+  if (p == '+') {
+    timestamp = timestamp - zone_ts;
+  } else if (p == '-') {
     timestamp = timestamp + zone_ts;
   }
   return timestamp > 0 ? timestamp : 0;
