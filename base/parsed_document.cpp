@@ -214,6 +214,7 @@ ParsedDoc::ParsedDoc(const nlohmann::json& value) {
   GET(SiteName);
   GET(Description);
   GET(Text);
+  GET(FileName);
   GET(FetchTime);
   GET(MaxAge);
   GET(Lang);
@@ -222,6 +223,7 @@ ParsedDoc::ParsedDoc(const nlohmann::json& value) {
   GET(Category);
   GET(Weight);
 #undef GET
+  State = EState::Added;
 }
 nlohmann::json ParsedDoc::Serialize() const {
   nlohmann::json res;
@@ -231,6 +233,7 @@ nlohmann::json ParsedDoc::Serialize() const {
   ADD(SiteName);
   ADD(Description);
   ADD(FetchTime);
+  ADD(FileName);
   ADD(Text);
   ADD(MaxAge);
   ADD(Lang);
