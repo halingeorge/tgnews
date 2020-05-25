@@ -23,7 +23,7 @@ std::string GetHost(const std::string& url) {
 }
 
 
-std::vector<ParsedDoc> MakeDocumentsFromDir(const std::string& dir, int nDocs) {
+std::vector<ParsedDoc> MakeDocumentsFromDir(const std::string& dir, int nDocs, Context* context) {
   boost::filesystem::path dirPath(dir);
   boost::filesystem::recursive_directory_iterator start(dirPath);
   boost::filesystem::recursive_directory_iterator end;
@@ -37,7 +37,7 @@ std::vector<ParsedDoc> MakeDocumentsFromDir(const std::string& dir, int nDocs) {
     if (path.substr(path.length() - 5) == ".html") {
       std::ifstream file(path);
       std::string content(std::istreambuf_iterator<char>(file), {});
-      documents.emplace_back(ParsedDoc(it->path().filename().string(), std::move(content), 0, ParsedDoc::EState::Added));
+      documents.emplace_back(ParsedDoc(context, it->path().filename().string(), std::move(content), 0, ParsedDoc::EState::Added));
     }
     if (nDocs != -1 && documents.size() == static_cast<size_t>(nDocs)) {
       break;

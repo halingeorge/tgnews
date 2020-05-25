@@ -144,7 +144,6 @@ CalculatedResponses::CalculatedResponses(
                              return l.GetTime() < r.GetTime();
                            })
               ->GetTime();
-  }
   size_t durIdx = 0;
   for (const auto& duration : Discretization) {
     using WeightWithIdx = std::pair<float, size_t>;
@@ -154,7 +153,7 @@ CalculatedResponses::CalculatedResponses(
     for (size_t clusterIdx = 0; clusterIdx < clustering.size(); ++clusterIdx) {
       const auto& c = clustering[clusterIdx];
       if (c.GetTime() + duration < now) {
-        break;  // cause clusters sorted (by freshness)
+        continue;  // cause clusters sorted (by freshness)
       }
       size_t catIdx = static_cast<size_t>(c.GetCategory());
       size_t langIdx = static_cast<size_t>(c.GetEnumLang());
@@ -166,20 +165,26 @@ CalculatedResponses::CalculatedResponses(
       for (size_t langIdx = 0; langIdx < LangCount; ++langIdx) {
         auto& vec = weights[catIdx][langIdx];
         std::sort(vec.begin(), vec.end(), std::greater<WeightWithIdx>());
-        nlohmann::json ans = nlohmann::json::array();
+        nlohmann::json threads = nlohmann::json::array();
         for (const auto& it : vec) {
           nlohmann::json thread;
           thread["title"] = clustering[it.second].GetTitle();
+          thread["category"] = CategoryNames.at(static_cast<size_t>(clustering[it.second].GetCategory()));
           nlohmann::json articles = nlohmann::json::array();
           for (const auto& d : clustering[it.second].GetDocs()) {
             articles.push_back(d.FileName);
           }
           thread["articles"] = std::move(articles);
-          ans.push_back(thread);
+          threads.push_back(thread);
         }
-        Answers[durIdx][catIdx][langIdx] = ans;
+        nlohmann::json ans = { {"threads",  threads} };
+        Answers[durIdx][catIdx][langIdx] = std::move(ans);
       }
     }
+    ++durIdx;
+  }
+  } else {
+    std::cerr << "empty clustering somehow"; 
   }
 }
 
@@ -192,6 +197,7 @@ nlohmann::json CalculatedResponses::GetAns(const std::string& lang,
   if (idx == Discretization.size()) {
     --idx;
   }
+  LOG(INFO) << idx << " - period idx";
   size_t catIdx = NC_COUNT;
   if (category == "any") catIdx = NC_ANY;
   if (category == "society") catIdx = NC_SOCIETY;
@@ -201,20 +207,22 @@ nlohmann::json CalculatedResponses::GetAns(const std::string& lang,
   if (category == "entertainment") catIdx = NC_ENTERTAINMENT;
   if (category == "science") catIdx = NC_SCIENCE;
   if (category == "other") catIdx = NC_OTHER;
+  LOG(INFO) << catIdx << " - cat idx";
   if (catIdx == NC_COUNT) {
     throw std::runtime_error("unknown cat");
   }
   size_t langIdx = LangCount;
   if (lang == "ru") langIdx = LangRu;
   if (lang == "en") langIdx = LangEn;
+  LOG(INFO) << langIdx << " - lang idx";
   if (langIdx == LangCount) {
     throw std::runtime_error("unknown lang");
   }
   return Answers[idx][catIdx][langIdx];
 }
 
-ResponseBuilder::ResponseBuilder(tgnews::Context context)
-    : Context(std::move(context)) {}
+ResponseBuilder::ResponseBuilder(tgnews::Context* context)
+    : Context(context) {}
 
 CalculatedResponses ResponseBuilder::AddDocuments(std::vector<ParsedDoc> docs) {
   LOG(INFO) << docs.size() << " - docs size";
@@ -236,10 +244,10 @@ CalculatedResponses ResponseBuilder::AddDocuments(std::vector<ParsedDoc> docs) {
     std::chrono::steady_clock::time_point begin =
         std::chrono::steady_clock::now();
     for (auto& doc : Docs) {
-      doc.ParseLang(Context.LangDetect.get());
-      doc.Tokenize(Context);
-      doc.DetectCategory(Context);
-      doc.CalcWeight(Context);
+      doc.ParseLang(Context->LangDetect.get());
+      doc.Tokenize(*Context);
+      doc.DetectCategory(*Context);
+      doc.CalcWeight(*Context);
     }
     std::chrono::steady_clock::time_point end =
         std::chrono::steady_clock::now();
@@ -250,16 +258,16 @@ CalculatedResponses ResponseBuilder::AddDocuments(std::vector<ParsedDoc> docs) {
               << "[milli]";
   }
   auto ruEmbedder =
-      Embedder(Context.RuCatModel.get(), Context.RuMatrix, Context.RuBias);
+      Embedder(Context->RuCatModel.get(), Context->RuMatrix, Context->RuBias);
   auto enEmbedder =
-      Embedder(Context.EnCatModel.get(), Context.EnMatrix, Context.EnBias);
+      Embedder(Context->EnCatModel.get(), Context->EnMatrix, Context->EnBias);
   {
     std::chrono::steady_clock::time_point begin =
         std::chrono::steady_clock::now();
     for (auto& doc : Docs) {
-      if (doc.Lang && doc.Lang == "ru") {
+      if (doc.Lang.size() && doc.Lang == "ru") {
         doc.Vector = ruEmbedder.GetEmbedding(doc);
-      } else if (doc.Lang && doc.Lang == "en") {
+      } else if (doc.Lang.size() && doc.Lang == "en") {
         doc.Vector = enEmbedder.GetEmbedding(doc);
       }
     }

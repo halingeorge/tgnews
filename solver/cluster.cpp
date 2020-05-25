@@ -94,9 +94,9 @@ namespace tgnews {
   std::vector<Cluster> RunClustering(std::vector<ParsedDoc>& docs) {
     std::vector<ParsedDoc> ruDocs, enDocs;
     for (auto& doc : docs) {
-      if (doc.Lang && doc.Lang == "ru" && doc.IsNews()) {
+      if (doc.Lang.size() && doc.Lang == "ru" && doc.IsNews()) {
         ruDocs.push_back(doc);
-      } else if (doc.Lang && doc.Lang == "en" && doc.IsNews()) {
+      } else if (doc.Lang.size() && doc.Lang == "en" && doc.IsNews()) {
         enDocs.push_back(doc);
       }
     }

@@ -30,6 +30,7 @@ enum ENewsCategory {
 
     NC_COUNT
 };
+const std::vector<std::string> CategoryNames = {"any", "society", "economy", "technology", "sports", "entertainment", "science", "other"};
 
 class ParsedDoc {
  public:
@@ -40,7 +41,7 @@ class ParsedDoc {
   };
 
  public:
-  ParsedDoc(const std::string& name, std::string content, uint64_t max_age, EState state);
+  ParsedDoc(Context* context, const std::string& name, std::string content, uint64_t max_age, EState state);
   ParsedDoc(const nlohmann::json& value);
   
   void ParseLang(const fasttext::FastText* model);
@@ -72,15 +73,14 @@ class ParsedDoc {
   uint64_t FetchTime = 0;
   uint64_t MaxAge = 0;
 
-  std::vector<std::string> OutLinks;
   std::string Title;
   std::string GoodTitle;
   std::string GoodText;
   std::string FileName;
-  std::optional<std::string> Lang;
+  std::string Lang;
   ENewsCategory Category = NC_UNDEFINED;
   fasttext::Vector Vector = fasttext::Vector(50);
-  float Weight;
+  float Weight = -1.f;
 };
 
 }

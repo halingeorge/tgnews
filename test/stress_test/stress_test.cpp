@@ -16,6 +16,7 @@ DEFINE_int32(thread_count, 2, "thread count for shooting");
 DEFINE_int32(shooting_time, 60, "time to shoot in seconds");
 DEFINE_bool(log_to_stderr, false, "log to stderr");
 DEFINE_string(content_path, "content", "content path");
+DEFINE_string(model_path, "models", "path to models");
 
 using namespace tgnews;
 
@@ -112,8 +113,9 @@ int main(int argc, char** argv) {
 
   google::InitGoogleLogging(argv[0]);
 
+  Context context(FLAGS_model_path, nullptr);
   std::vector<TestDocument> documents;
-  for (const auto& document : MakeDocumentsFromDir(FLAGS_content_path)) {
+  for (const auto& document : MakeDocumentsFromDir(FLAGS_content_path, -1, &context)) {
     documents.push_back(TestDocument(document.FileName, document.Data,
                                      std::chrono::hours(1024)));
   }

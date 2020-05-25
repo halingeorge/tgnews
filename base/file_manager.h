@@ -19,6 +19,7 @@
 #include "base/base.h"
 #include "base/parsed_document.h"
 #include "base/time_helpers.h"
+#include "base/context.h"
 #include "fmt/format.h"
 #include "glog/logging.h"
 #include "third_party/nlohmann_json/single_include/nlohmann/json.hpp"
@@ -27,7 +28,7 @@ namespace tgnews {
 
 class FileManager {
  public:
-  explicit FileManager(std::experimental::thread_pool& pool,
+  explicit FileManager(std::experimental::thread_pool& pool, Context* context,
                        std::string content_dir = "content");
 
   ~FileManager();
@@ -68,6 +69,7 @@ class FileManager {
   void RemoveFileFromDisk(boost::filesystem::path filepath);
 
  private:
+  Context* context_;
   std::string content_dir_;
   std::atomic<uint64_t> last_fetch_time_ = 0;
   std::vector<ParsedDoc> change_log_;

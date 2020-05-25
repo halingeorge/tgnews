@@ -14,10 +14,10 @@ namespace tgnews {
       return Docs[0].Title;
     }
     std::string GetLang() const {
-      return Docs[0].Lang ? *Docs[0].Lang : "en";
+      return Docs[0].Lang.size() ? Docs[0].Lang : "en";
     }
     ELang GetEnumLang() const {
-      if (!Docs[0].Lang) {
+      if (!Docs[0].Lang.size()) {
         return LangEn;
       }
       return Docs[0].Lang == "ru" ? LangRu : LangEn;

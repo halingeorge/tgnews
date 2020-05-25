@@ -2,9 +2,10 @@
 
 namespace tgnews {
 
-FileManager::FileManager(std::experimental::thread_pool& pool,
+FileManager::FileManager(std::experimental::thread_pool& pool, Context* context,
                          std::string content_dir)
     : content_dir_(std::move(content_dir)),
+      context_(context),
       documents_strand_(pool.get_executor()),
       pool_(pool) {
   boost::filesystem::path content_path = content_dir_;
@@ -290,7 +291,7 @@ cti::continuable<ParsedDoc> FileManager::CreateDocument(
             [this, p = std::move(promise), filename = std::move(filename),
              content = std::move(content), max_age = max_age,
              state = state]() mutable {
-              p.set_value(ParsedDoc(std::move(filename), std::move(content),
+              p.set_value(ParsedDoc(context_, std::move(filename), std::move(content),
                                     max_age, state));
             });
       });

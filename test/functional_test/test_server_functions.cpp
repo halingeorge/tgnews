@@ -14,13 +14,14 @@ namespace {
 
 constexpr size_t kPort = 12345;
 constexpr const char* kContentDir = "test_content";
+constexpr const char* kModelsPath = "models";
 
 }  // namespace
 
 class ServerTest : public Test {
  public:
   ServerTest() : mt(rd()) {
-    FLAGS_minloglevel = 0;
+    FLAGS_minloglevel = 1;
 
     boost::filesystem::path content_path = kContentDir;
     if (boost::filesystem::exists(content_path)) {
@@ -29,8 +30,9 @@ class ServerTest : public Test {
     }
     LOG_IF(FATAL, !boost::filesystem::create_directory(content_path))
         << "unable to create content dir: " << kContentDir;
+    Context* context = new Context(kModelsPath, nullptr); 
     server = std::make_unique<Server>(
-        kPort, std::make_unique<FileManager>(pool_, kContentDir), pool_);
+        kPort, std::make_unique<FileManager>(pool_, context, kContentDir), pool_);
 
     server_thread_ = std::make_unique<std::thread>([&]() { server->Run(); });
 

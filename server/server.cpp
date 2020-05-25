@@ -221,6 +221,7 @@ void Server::SetupHandlers() {
           headers.emplace("Content-type", "application/json");
           auto value = GetDocumentThreads(period, lang_code, category);
           if (value.has_value()) {
+            LOG(INFO) << value->dump();
             response->write(value->dump(), headers);
           } else {
             response->write(
