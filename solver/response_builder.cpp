@@ -182,14 +182,14 @@ CalculatedResponses::CalculatedResponses(
         weights;
     for (size_t clusterIdx = 0; clusterIdx < clustering.size(); ++clusterIdx) {
       const auto& c = clustering[clusterIdx];
-      if (c.GetTime() + 2 * duration < now) {
+      if (c.GetTime() + 3 * duration < now) {
         continue;  // cause clusters sorted (by freshness)
       }
       size_t catIdx = static_cast<size_t>(c.GetCategory());
       size_t langIdx = static_cast<size_t>(c.GetEnumLang());
       float clusterWeight = c.Weight();
       if (c.GetTime() + duration >= now) {
-        clusterWeight *= 1.5;
+        clusterWeight *= 2;
       }
       weights[catIdx][langIdx].push_back({clusterWeight, clusterIdx});
       weights[static_cast<size_t>(NC_ANY)][langIdx].push_back(
@@ -274,6 +274,11 @@ CalculatedResponses ResponseBuilder::AddDocuments(std::vector<ParsedDoc> docs) {
       size_t idx = std::distance(Docs.begin(), std::find_if(Docs.begin(), Docs.end(), [doc](const auto& d) { return d.FileName == doc.FileName;}));
       Docs[idx] = doc;
     }
+  }
+  auto it = std::max_element(Docs.begin(), Docs.end(), [](const auto& l, const auto& r) { return l.FetchTime < r.FetchTime; });
+  if (it != Docs.end()) { 
+    uint64_t now = it->FetchTime;
+    Docs.erase(std::remove_if(Docs.begin(), Docs.end(), [now](const auto& d) { return d.ExpirationTime() > now; }), Docs.end());
   }
   {
     std::chrono::steady_clock::time_point begin =

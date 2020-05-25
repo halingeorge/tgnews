@@ -272,7 +272,7 @@ void Server::SetupHandlers() {
         auto stats_handler = std::make_shared<StatsHandler>(stats_);
 
         try {
-          file_manager_->RemoveOutdatedFiles();
+          //file_manager_->RemoveOutdatedFiles();
 
           GetAllDocuments()
               .then([=](auto&& value) {
@@ -364,7 +364,7 @@ void Server::UpdateResponseCache() {
 
               responses_cache_->dump(RESPONSES_CACHE_DUMP);
 
-              file_manager_->RemoveOutdatedFiles();
+              //file_manager_->RemoveOutdatedFiles();
             });
       })
       .fail(OnFailCallback());
