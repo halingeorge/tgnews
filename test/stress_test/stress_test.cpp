@@ -56,7 +56,7 @@ class Worker {
       });
     }
     MakeRequest([&] {
-      GetArticles(*client_);
+      GetArticles(*client_, /*update_time =*/ false);
     });
     WaitForSubsetDocuments(*client_, GetDocumentNames(documents_));
     for (auto document : documents_) {
@@ -66,7 +66,7 @@ class Worker {
       });
     }
     MakeRequest([&] {
-      GetArticles(*client_);
+      GetArticles(*client_, /*update_time =*/ false);
     });
     WaitForSubsetDocuments(*client_, GetDocumentNames(documents_));
     for (auto document : documents_) {
@@ -75,7 +75,7 @@ class Worker {
       });
     }
     MakeRequest([&] {
-      GetArticles(*client_);
+      GetArticles(*client_, /*update_time =*/ false);
     });
     WaitForSubsetDocuments(*client_, GetDocumentNames(documents_));
     for (auto document : documents_) {
@@ -84,7 +84,7 @@ class Worker {
       });
     }
     MakeRequest([&] {
-      GetArticles(*client_);
+      GetArticles(*client_, /*update_time =*/ false);
     });
     WaitForSubsetDocuments(*client_, GetDocumentNames(documents_));
   }
@@ -115,7 +115,7 @@ int main(int argc, char** argv) {
   std::vector<TestDocument> documents;
   for (const auto& document : MakeDocumentsFromDir(FLAGS_content_path)) {
     documents.push_back(TestDocument(document.FileName, document.Data,
-                                     std::chrono::hours(24)));
+                                     std::chrono::hours(1024)));
   }
   LOG(INFO) << "document count: " << documents.size();
 
