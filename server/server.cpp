@@ -155,7 +155,13 @@ void Server::SetupHandlers() {
         auto stats_handler = std::make_shared<StatsHandler>(stats_);
 
         try {
-          file_manager_->RemoveOutdatedFiles().fail(OnFailCallback());
+          if (!file_manager_->FinishedRestoringFromDisk()) {
+            response->write(
+                SimpleWeb::StatusCode::server_error_service_unavailable);
+            LOG(INFO) << "response: service is unavailable";
+            stats_handler->OnSuccess();
+            return;
+          }
 
           auto filename = request->path.substr(1);
           auto content = request->content.string();
@@ -196,7 +202,13 @@ void Server::SetupHandlers() {
         auto stats_handler = std::make_shared<StatsHandler>(stats_);
 
         try {
-          file_manager_->RemoveOutdatedFiles().fail(OnFailCallback());
+          if (!file_manager_->FinishedRestoringFromDisk()) {
+            response->write(
+                SimpleWeb::StatusCode::server_error_service_unavailable);
+            LOG(INFO) << "response: service is unavailable";
+            stats_handler->OnSuccess();
+            return;
+          }
 
           auto filename = request->path.substr(1);
           LOG(INFO) << "received delete request: " << filename;
@@ -222,7 +234,13 @@ void Server::SetupHandlers() {
         auto stats_handler = std::make_shared<StatsHandler>(stats_);
 
         try {
-          file_manager_->RemoveOutdatedFiles().fail(OnFailCallback());
+          if (!file_manager_->FinishedRestoringFromDisk()) {
+            response->write(
+                SimpleWeb::StatusCode::server_error_service_unavailable);
+            LOG(INFO) << "response: service is unavailable";
+            stats_handler->OnSuccess();
+            return;
+          }
 
           LOG(INFO) << "get threads: " << request->query_string;
 
@@ -345,6 +363,8 @@ void Server::UpdateResponseCache() {
               }
 
               responses_cache_->dump(RESPONSES_CACHE_DUMP);
+
+              file_manager_->RemoveOutdatedFiles();
             });
       })
       .fail(OnFailCallback());

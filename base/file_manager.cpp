@@ -120,6 +120,9 @@ cti::continuable<std::vector<ParsedDoc>> FileManager::GetDocuments() {
 }
 
 cti::continuable<std::vector<ParsedDoc>> FileManager::FetchChangeLog() {
+  if (!finished_restoring_from_disk_) {
+    return cti::make_ready_continuable<std::vector<ParsedDoc>>({});
+  }
   return cti::make_continuable<std::vector<ParsedDoc>>([this](auto promise) {
     std::experimental::post(documents_strand_,
                             [this, p = std::move(promise)]() mutable {
