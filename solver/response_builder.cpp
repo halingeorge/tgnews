@@ -278,7 +278,7 @@ CalculatedResponses ResponseBuilder::AddDocuments(std::vector<ParsedDoc> docs) {
   auto it = std::max_element(Docs.begin(), Docs.end(), [](const auto& l, const auto& r) { return l.FetchTime < r.FetchTime; });
   if (it != Docs.end()) { 
     uint64_t now = it->FetchTime;
-    Docs.erase(std::remove_if(Docs.begin(), Docs.end(), [now](const auto& d) { return d.ExpirationTime() > now; }), Docs.end());
+    Docs.erase(std::remove_if(Docs.begin(), Docs.end(), [now](const auto& d) { return d.ExpirationTime() < now; }), Docs.end());
   }
   {
     std::chrono::steady_clock::time_point begin =
