@@ -41,8 +41,6 @@ class FileManager {
 
   cti::continuable<bool> RemoveOutdatedFiles();
 
-  bool IsFileStillAlive(std::string filename);
-
   cti::continuable<std::vector<ParsedDoc>> GetDocuments();
 
   cti::continuable<std::vector<ParsedDoc>> FetchChangeLog();

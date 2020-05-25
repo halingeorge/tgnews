@@ -12,8 +12,6 @@ class FileCache {
  public:
   explicit FileCache(FileManager* file_manager);
 
-  bool IsFileStillAlive(std::string filename);
-
   std::vector<ParsedDoc> GetDocuments();
 
  private:

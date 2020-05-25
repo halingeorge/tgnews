@@ -21,6 +21,9 @@ void PutRequest(SimpleWeb::Client<SimpleWeb::HTTP>& client,
   headers.emplace("Content-Length", fmt::format("{0}", content.size()));
   auto response =
       client.request("PUT", fmt::format("/{0}", filename), content, headers);
+  if (expected_status.empty()) {
+    return;
+  }
   EXPECT_EQ(response->status_code, expected_status);
 }
 
@@ -29,6 +32,9 @@ void DeleteRequest(SimpleWeb::Client<SimpleWeb::HTTP>& client,
                    std::string_view expected_status) {
   LOG(INFO) << fmt::format("remove filename {0}", filename);
   auto response = client.request("DELETE", fmt::format("/{0}", filename));
+  if (expected_status.empty()) {
+    return;
+  }
   EXPECT_EQ(response->status_code, expected_status);
 }
 

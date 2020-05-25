@@ -207,7 +207,7 @@ ParsedDoc::ParsedDoc(Context* context, const std::string& name, std::string cont
   CalcWeight(*context);
 }
 
-ParsedDoc::ParsedDoc(const nlohmann::json& value) {
+ParsedDoc::ParsedDoc(const nlohmann::json& value) : State(EState::Added) {
 #define GET(s) value.at(#s).get_to(s);
   GET(Title);
   GET(Url);

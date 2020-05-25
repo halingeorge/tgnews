@@ -61,7 +61,7 @@ class ParsedDoc {
 
   std::string Data;
 
-  EState State;
+  EState State = EState::Added;
 
   std::string Url;
   std::string SiteName;

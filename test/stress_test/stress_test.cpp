@@ -53,41 +53,40 @@ class Worker {
   void DoIteration() {
     for (auto document : documents_) {
       MakeRequest([&] {
-        PutRequest(*client_, document.name, document.content, document.max_age);
+        PutRequest(*client_, document.name, document.content, document.max_age, /*expected_status =*/ "");
       });
     }
     MakeRequest([&] {
-      GetArticles(*client_, /*update_time =*/ false);
+      GetArticles(*client_, std::chrono::seconds(1024), "en", "any");
     });
-    WaitForSubsetDocuments(*client_, GetDocumentNames(documents_));
+//    WaitForSubsetDocuments(*client_, GetDocumentNames(documents_));
     for (auto document : documents_) {
       MakeRequest([&] {
-        PutRequest(*client_, document.name, document.content, document.max_age,
-                   "204 No Content");
+        PutRequest(*client_, document.name, document.content, document.max_age, /*expected_status =*/ "");
       });
     }
     MakeRequest([&] {
-      GetArticles(*client_, /*update_time =*/ false);
+      GetArticles(*client_, std::chrono::seconds(1024), "en", "any");
     });
-    WaitForSubsetDocuments(*client_, GetDocumentNames(documents_));
+//    WaitForSubsetDocuments(*client_, GetDocumentNames(documents_));
     for (auto document : documents_) {
       MakeRequest([&] {
-        DeleteRequest(*client_, document.name);
+        DeleteRequest(*client_, document.name, /*expected_status =*/ "");
       });
     }
     MakeRequest([&] {
-      GetArticles(*client_, /*update_time =*/ false);
+      GetArticles(*client_, std::chrono::seconds(1024), "en", "any");
     });
-    WaitForSubsetDocuments(*client_, GetDocumentNames(documents_));
+//    WaitForSubsetDocuments(*client_, GetDocumentNames(documents_));
     for (auto document : documents_) {
       MakeRequest([&] {
-        DeleteRequest(*client_, document.name, "404 Not Found");
+        DeleteRequest(*client_, document.name, /*expected_status =*/ "");
       });
     }
     MakeRequest([&] {
-      GetArticles(*client_, /*update_time =*/ false);
+      GetArticles(*client_, std::chrono::seconds(1024), "en", "any");
     });
-    WaitForSubsetDocuments(*client_, GetDocumentNames(documents_));
+//    WaitForSubsetDocuments(*client_, GetDocumentNames(documents_));
   }
 
   template <typename F>
