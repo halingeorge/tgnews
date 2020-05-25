@@ -17,9 +17,9 @@
 #include <vector>
 
 #include "base/base.h"
+#include "base/context.h"
 #include "base/parsed_document.h"
 #include "base/time_helpers.h"
-#include "base/context.h"
 #include "fmt/format.h"
 #include "glog/logging.h"
 #include "third_party/nlohmann_json/single_include/nlohmann/json.hpp"
@@ -44,6 +44,10 @@ class FileManager {
   cti::continuable<std::vector<ParsedDoc>> GetDocuments();
 
   cti::continuable<std::vector<ParsedDoc>> FetchChangeLog();
+
+  bool FinishedRestoringFromDisk() const {
+    return finished_restoring_from_disk_.load();
+  }
 
  private:
   cti::continuable<bool> EmplaceDocument(std::unique_ptr<ParsedDoc> document);
