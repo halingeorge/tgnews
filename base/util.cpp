@@ -37,7 +37,7 @@ std::vector<ParsedDoc> MakeDocumentsFromDir(const std::string& dir, int nDocs, C
     if (path.substr(path.length() - 5) == ".html") {
       std::ifstream file(path);
       std::string content(std::istreambuf_iterator<char>(file), {});
-      documents.emplace_back(ParsedDoc(context, it->path().filename().string(), std::move(content), 0, ParsedDoc::EState::Added));
+      documents.emplace_back(ParsedDoc(context, it->path().filename().string(), std::move(content), 1000000000, ParsedDoc::EState::Added));
     }
     if (nDocs != -1 && documents.size() == static_cast<size_t>(nDocs)) {
       break;
