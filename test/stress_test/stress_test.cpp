@@ -57,7 +57,7 @@ class Worker {
       });
     }
     MakeRequest([&] {
-      GetArticles(*client_, std::chrono::seconds(1024), "en", "any");
+      GetArticles(*client_, std::chrono::hours(2), "en", "any");
     });
 //    WaitForSubsetDocuments(*client_, GetDocumentNames(documents_));
     for (auto document : documents_) {
@@ -66,7 +66,7 @@ class Worker {
       });
     }
     MakeRequest([&] {
-      GetArticles(*client_, std::chrono::seconds(1024), "en", "any");
+      GetArticles(*client_, std::chrono::hours(2), "en", "any");
     });
 //    WaitForSubsetDocuments(*client_, GetDocumentNames(documents_));
     for (auto document : documents_) {
@@ -75,7 +75,7 @@ class Worker {
       });
     }
     MakeRequest([&] {
-      GetArticles(*client_, std::chrono::seconds(1024), "en", "any");
+      GetArticles(*client_, std::chrono::hours(2), "en", "any");
     });
 //    WaitForSubsetDocuments(*client_, GetDocumentNames(documents_));
     for (auto document : documents_) {
@@ -84,7 +84,7 @@ class Worker {
       });
     }
     MakeRequest([&] {
-      GetArticles(*client_, std::chrono::seconds(1024), "en", "any");
+      GetArticles(*client_, std::chrono::hours(2), "en", "any");
     });
 //    WaitForSubsetDocuments(*client_, GetDocumentNames(documents_));
   }
@@ -107,7 +107,7 @@ class Worker {
 int main(int argc, char** argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, false);
 
-  FLAGS_minloglevel = 1;
+  FLAGS_minloglevel = 0;
   FLAGS_logtostderr = FLAGS_log_to_stderr;
 
   google::InitGoogleLogging(argv[0]);

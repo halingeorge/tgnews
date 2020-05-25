@@ -13,8 +13,7 @@ void PutRequest(SimpleWeb::Client<SimpleWeb::HTTP>& client,
                 std::string_view filename, std::string_view content,
                 std::chrono::seconds max_age,
                 std::string_view expected_status) {
-  LOG(INFO) << fmt::format("put filename {0} content {1} max_age {2}", filename,
-                           content, max_age.count());
+//  LOG(INFO) << fmt::format("put filename {} max_age {}", filename, max_age.count());
   SimpleWeb::CaseInsensitiveMultimap headers;
   headers.emplace("Content-Type", "text/html");
   headers.emplace("Cache-Control", fmt::format("max-age={0}", max_age.count()));
@@ -30,7 +29,7 @@ void PutRequest(SimpleWeb::Client<SimpleWeb::HTTP>& client,
 void DeleteRequest(SimpleWeb::Client<SimpleWeb::HTTP>& client,
                    std::string_view filename,
                    std::string_view expected_status) {
-  LOG(INFO) << fmt::format("remove filename {0}", filename);
+//  LOG(INFO) << fmt::format("remove filename {0}", filename);
   auto response = client.request("DELETE", fmt::format("/{0}", filename));
   if (expected_status.empty()) {
     return;
@@ -65,12 +64,8 @@ std::vector<std::string> GetArticles(SimpleWeb::Client<SimpleWeb::HTTP>& client,
 
   nlohmann::json value = nlohmann::json::parse(response->content.string());
 
-  LOG(INFO) << "articles: " << value.dump(4);
-  std::vector<std::string> articles;
-  for (const auto& article : value["articles"]) {
-    articles.push_back(article.get<std::string>());
-  }
-  return articles;
+  LOG(INFO) << "articles count: " << value["threads"].size();
+  return {};
 }
 
 std::string GenerateString(std::mt19937& mt, size_t length) {
