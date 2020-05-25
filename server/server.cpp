@@ -203,7 +203,25 @@ void Server::SetupHandlers() {
           LOG(INFO) << fmt::format(
               "get threads with period={0} lang_code={1} category={2}", period,
               lang_code, category);
-          GetDocumentThreads(period, lang_code, category)
+          SimpleWeb::CaseInsensitiveMultimap headers;
+          headers.emplace("Content-type", "application/json");
+          response->write(
+              GetDocumentThreads(period, lang_code, category).dump(), headers);
+          stats_handler->OnSuccess();
+        } catch (std::exception& e) {
+          OnFailCallback(response, stats_handler)(std::current_exception());
+        }
+      };
+
+  server_.resource["^/_all_documents"]["GET"] =
+      [this](std::shared_ptr<HttpServer::Response> response,
+             std::shared_ptr<HttpServer::Request> request) {
+        auto stats_handler = std::make_shared<StatsHandler>(stats_);
+
+        try {
+          file_manager_->RemoveOutdatedFiles();
+
+          GetAllDocuments()
               .then([=](auto&& value) {
                 SimpleWeb::CaseInsensitiveMultimap headers;
                 headers.emplace("Content-type", "application/json");
@@ -226,8 +244,7 @@ void Server::SetupHandlers() {
       };
 }
 
-cti::continuable<nlohmann::json> Server::GetDocumentThreads(
-    uint64_t /*period*/, std::string /*lang_code*/, std::string /*category*/) {
+cti::continuable<nlohmann::json> Server::GetAllDocuments() {
   return file_manager_->GetDocuments().then(
       [](std::vector<Document> documents) {
         nlohmann::json value;
@@ -239,6 +256,14 @@ cti::continuable<nlohmann::json> Server::GetDocumentThreads(
         LOG(INFO) << "GetDocumentThreads: " << value;
         return value;
       });
+}
+
+nlohmann::json Server::GetDocumentThreads(uint64_t period,
+                                          std::string lang_code,
+                                          std::string category) {
+  std::shared_lock lock(responses_cache_mutex_);
+  return responses_cache_->GetAns(std::move(lang_code), std::move(category),
+                                  period);
 }
 
 void Server::UpdateResponseCache() {
@@ -258,7 +283,7 @@ void Server::UpdateResponseCache() {
           repeat();
           return;
         }
-        std::experimental::dispatch(
+        std::experimental::post(
             responses_cache_strand_, [this, repeat = std::move(repeat),
                                       change_log = std::move(change_log)] {
               LOG(INFO) << "change log size: " << change_log.size();

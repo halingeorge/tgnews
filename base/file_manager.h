@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "base/base.h"
+#include "base/document.h"
 #include "base/time_helpers.h"
 #include "fmt/format.h"
 #include "glog/logging.h"
@@ -50,7 +51,7 @@ class FileManager {
     return UpdateContentOrCreateDocument(
         filename, std::move(content), deadline).then([this, f = std::move(filename)](bool result) {
       return cti::make_continuable<bool>([this, f = std::move(f), result](auto&& promise) {
-        std::experimental::dispatch(
+        std::experimental::post(
             documents_strand_, [this, p = std::move(promise), f = std::move(f), result]() mutable {
               auto it = document_by_name_.find(f);
               VERIFY(it != document_by_name_.end(), fmt::format("no document with name {} found", f));
@@ -67,11 +68,11 @@ class FileManager {
   auto RemoveFile(std::string filename) {
     // bool is unnecessary here but it doesn't compile with void.
     return cti::make_continuable<bool>([this, f = std::move(filename)](auto&& promise) {
-      std::experimental::dispatch(
+      std::experimental::post(
           pool_, [this, p = std::move(promise), f = std::move(f)]() mutable {
             RemoveFileFromDisk(f);
 
-            std::experimental::dispatch(
+            std::experimental::post(
                 documents_strand_, [this, p = std::move(p), f = std::move(f)]() mutable {
                   p.set_value(RemoveFileFromMap(std::move(f)));
                 });
@@ -81,7 +82,7 @@ class FileManager {
 
   auto RemoveOutdatedFiles() {
     return cti::make_continuable<void>([this](auto&& promise) {
-      std::experimental::dispatch(
+      std::experimental::post(
           documents_strand_, [this, p = std::move(promise)]() mutable {
             auto now = NowCount();
 
@@ -95,7 +96,7 @@ class FileManager {
               RemoveFileFromMap(it->second->name);
             }
 
-            std::experimental::dispatch(
+            std::experimental::post(
                 pool_, [this, p = std::move(p), remove = std::move(remove_from_disk)]() mutable {
                   for (auto&& filename : remove) {
                     RemoveFileFromDisk(filename);
@@ -108,7 +109,7 @@ class FileManager {
 
   bool IsFileStillAlive(std::string filename) {
     return cti::make_continuable<bool>([this, f = std::move(filename)](auto&& promise) {
-      std::experimental::dispatch(
+      std::experimental::post(
           documents_strand_, [this, p = std::move(promise), f = std::move(f)]() mutable {
             auto now = NowCount();
             auto it = document_by_name_.find(f);
@@ -123,7 +124,7 @@ class FileManager {
   auto GetDocuments() {
     return cti::make_continuable<std::vector<Document>>(
         [this](auto&& promise) {
-          std::experimental::dispatch(
+          std::experimental::post(
               documents_strand_, [this, p = std::move(promise)]() mutable {
                 std::vector<Document> documents;
                 documents.reserve(document_by_name_.size());
@@ -139,7 +140,7 @@ class FileManager {
   cti::continuable<std::vector<Document>> FetchChangeLog() {
     return cti::make_continuable<std::vector<Document>>(
         [this](auto&& promise) {
-          std::experimental::dispatch(
+          std::experimental::post(
               documents_strand_, [this, p = std::move(promise)]() mutable {
                 std::vector<Document> documents;
                 change_log_.swap(documents);
@@ -153,7 +154,7 @@ class FileManager {
                       uint64_t deadline) {
     return cti::make_continuable<void>(
         [this, f = std::move(filename), c = std::move(content), d = deadline](auto&& promise) {
-          std::experimental::dispatch(
+          std::experimental::post(
               documents_strand_, [this, p = std::move(promise), f = std::move(f), c = std::move(c), d = d]() mutable {
                 auto document_ptr =
                     std::make_unique<Document>(std::move(f), std::move(c),
@@ -244,7 +245,7 @@ class FileManager {
   cti::continuable<bool> UpdateContentOrCreateDocument(std::string filename, std::string content, uint64_t deadline) {
     return cti::make_continuable<bool>(
         [this, f = std::move(filename), c = std::move(content), d = deadline](cti::promise<bool>&& promise) {
-          std::experimental::dispatch(
+          std::experimental::post(
               documents_strand_, [this, p = std::move(promise), f = std::move(f), c = std::move(c), d = d]() mutable {
                 auto it = document_by_name_.find(f);
                 if (it != document_by_name_.end()) {
