@@ -13,14 +13,17 @@ constexpr size_t DiscretizationSize = 12;
 
 class CalculatedResponses {
  public:
+  CalculatedResponses(const std::string& path);
   CalculatedResponses(const std::vector<tgnews::ParsedDoc>& docs, const std::vector<Cluster>& clustering);
   nlohmann::json GetAns(const std::string& lang = {}, const std::string& category = {}, const uint64_t period = 0);
  public:
+  void dump(const std::string& path);
   nlohmann::json LangAns;
   nlohmann::json NewsAns;
   nlohmann::json CategoryAns;
   nlohmann::json ThreadsAns;
   std::array<std::array<std::array<nlohmann::json, LangCount>, ENewsCategory::NC_COUNT>, DiscretizationSize> Answers;
+  
 };
 
 class ResponseBuilder {
