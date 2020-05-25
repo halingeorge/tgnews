@@ -204,6 +204,7 @@ ParsedDoc::ParsedDoc(Context* context, const std::string& name, std::string cont
   ParseLang(context->LangDetect.get());
   Tokenize(*context);
   DetectCategory(*context);
+  CalcWeight(*context);
 }
 
 ParsedDoc::ParsedDoc(const nlohmann::json& value) {
@@ -219,6 +220,7 @@ ParsedDoc::ParsedDoc(const nlohmann::json& value) {
   GET(GoodTitle);
   GET(GoodText);
   GET(Category);
+  GET(Weight);
 #undef GET
 }
 nlohmann::json ParsedDoc::Serialize() const {
@@ -235,6 +237,7 @@ nlohmann::json ParsedDoc::Serialize() const {
   ADD(GoodTitle);
   ADD(GoodText);
   ADD(Category);
+  ADD(Weight);
 #undef ADD
   return res;
 }
@@ -320,6 +323,9 @@ void ParsedDoc::DetectCategory(const tgnews::Context& context) {
 }
 
 void ParsedDoc::CalcWeight(const tgnews::Context& context) {
+  if (Weight != -1.f) {
+    return; // allready calced
+  }
   Weight = context.Ratings.ScoreUrl(Url);
 }
 

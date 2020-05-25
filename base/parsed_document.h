@@ -80,7 +80,7 @@ class ParsedDoc {
   std::string Lang;
   ENewsCategory Category = NC_UNDEFINED;
   fasttext::Vector Vector = fasttext::Vector(50);
-  float Weight;
+  float Weight = -1.f;
 };
 
 }
