@@ -125,8 +125,6 @@ ParsedDoc::ParsedDoc(Context* context, const std::string& name, std::string cont
     : Data(std::move(content)), MaxAge(max_age), State(state) {
   FileName = name;
 
-  LOG(INFO) << "ParsedDoc: " << Data;
-
   tinyxml2::XMLDocument originalDoc;
   originalDoc.Parse(Data.data());
   const tinyxml2::XMLElement* htmlElement =

@@ -107,13 +107,13 @@ auto OnFailCallback(std::shared_ptr<HttpServer::Response> response,
 }
 
 std::unique_ptr<tgnews::CalculatedResponses> TryLoadCache() {
-  if (boost::filesystem::exists(RESPONSES_CACHE_DUMP)) {
-    try {
-      return std::make_unique<tgnews::CalculatedResponses>(RESPONSES_CACHE_DUMP);
-    } catch (std::exception& e) {
-      LOG(INFO) << "error while parsing responses cache dump " << e.what();
-    }
-  }
+//  if (boost::filesystem::exists(RESPONSES_CACHE_DUMP)) {
+//    try {
+//      return std::make_unique<tgnews::CalculatedResponses>(RESPONSES_CACHE_DUMP);
+//    } catch (std::exception& e) {
+//      LOG(INFO) << "error while parsing responses cache dump " << e.what();
+//    }
+//  }
   return {};
 }
 

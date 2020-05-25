@@ -16,7 +16,10 @@ FileManager::FileManager(std::experimental::thread_pool& pool, Context* context,
                        content_dir));
   }
 
-  RestoreFiles();
+  std::experimental::post(pool_, [this] {
+    RestoreFiles();
+    finished_restoring_from_disk_ = true;
+  });
 }
 
 FileManager::~FileManager() {
@@ -68,6 +71,9 @@ cti::continuable<bool> FileManager::RemoveFile(std::string filename) {
 }
 
 cti::continuable<bool> FileManager::RemoveOutdatedFiles() {
+  if (!finished_restoring_from_disk_) {
+    return cti::make_ready_continuable<bool>(true);
+  }
   return cti::make_continuable<bool>([this](auto promise) {
     std::experimental::post(
         documents_strand_, [this, p = std::move(promise)]() mutable {
@@ -127,32 +133,30 @@ cti::continuable<std::vector<ParsedDoc>> FileManager::FetchChangeLog() {
 cti::continuable<bool> FileManager::EmplaceDocument(
     std::unique_ptr<ParsedDoc> document) {
   LOG(INFO) << fmt::format("start emplacing document: {}", document->FileName);
-  return cti::make_continuable<bool>([this, d = std::move(document)](
-                                         auto promise) mutable {
-    LOG(INFO) << "in future";
-    LOG(INFO) << fmt::format("start emplacing document in future: {}",
-                             d->FileName);
-    std::experimental::post(
-        documents_strand_,
-        [this, p = std::move(promise), document = std::move(d)]() mutable {
-          EmplaceDocumentSync(std::move(document));
+  return cti::make_continuable<bool>(
+      [this, d = std::move(document)](auto promise) mutable {
+        LOG(INFO) << "in future";
+        LOG(INFO) << fmt::format("start emplacing document in future: {}",
+                                 d->FileName);
+        std::experimental::post(
+            documents_strand_,
+            [this, p = std::move(promise), document = std::move(d)]() mutable {
+              EmplaceDocumentSync(std::move(document));
 
-          p.set_value(true);
-        });
-  });
+              p.set_value(true);
+            });
+      });
 }
 
 void FileManager::EmplaceDocumentSync(std::unique_ptr<ParsedDoc> document) {
   LOG(INFO) << fmt::format("create document: {} fetch time: {}",
                            document->FileName, document->FetchTime);
 
-  last_fetch_time_ =
-      std::max(last_fetch_time_.load(), document->FetchTime);
+  last_fetch_time_ = std::max(last_fetch_time_.load(), document->FetchTime);
 
   change_log_.push_back(*document);
 
-  documents_with_deadline_.emplace(document->ExpirationTime(),
-                                   document.get());
+  documents_with_deadline_.emplace(document->ExpirationTime(), document.get());
   document_by_name_.emplace(document->FileName, std::move(document));
 }
 
@@ -185,7 +189,7 @@ void FileManager::RestoreFiles() {
       continue;
     }
 
-    EmplaceDocumentSync(std::make_unique<ParsedDoc>(std::move(value)));
+    EmplaceDocument(std::make_unique<ParsedDoc>(std::move(value)));
   }
 
   LOG(INFO) << "restored file count: " << document_by_name_.size();
@@ -215,57 +219,42 @@ bool FileManager::RemoveFileFromMap(std::string filename) {
 
 cti::continuable<bool> FileManager::UpdateContentOrCreateDocument(
     std::string filename, std::string content, uint64_t max_age) {
-  return cti::make_continuable<bool>(
-      [this, f = std::move(filename), c = std::move(content),
-       a = max_age](cti::promise<bool> promise) mutable {
-        std::experimental::post(
-            documents_strand_, [this, p = std::move(promise), f = std::move(f),
-                                c = std::move(c), a = a]() mutable {
-              auto it = document_by_name_.find(f);
-              if (it != document_by_name_.end()) {
-                auto* document = it->second.get();
+  return cti::make_continuable<bool>([this, f = std::move(filename),
+                                      c = std::move(content), a = max_age](
+                                         cti::promise<bool> promise) mutable {
+    std::experimental::post(documents_strand_, [this, p = std::move(promise),
+                                                f = std::move(f),
+                                                c = std::move(c),
+                                                a = a]() mutable {
+      auto it = document_by_name_.find(f);
+      if (it != document_by_name_.end()) {
+        auto* document = it->second.get();
 
-                CreateDocument(document->FileName, std::move(c), a,
-                               ParsedDoc::EState::Changed)
-                    .then([this, document,
-                           p = std::move(p)](auto new_document) mutable {
-                      std::experimental::post(
-                          documents_strand_,
-                          [this, document, p = std::move(p),
-                           new_document = std::move(new_document)]() mutable {
-                            documents_with_deadline_.erase(
-                                {document->ExpirationTime(), document});
+        auto new_document =
+            ParsedDoc(context_, document->FileName, std::move(c), a,
+                      ParsedDoc::EState::Changed);
 
-                            *document = std::move(new_document);
+        documents_with_deadline_.erase({document->ExpirationTime(), document});
 
-                            last_fetch_time_ = std::max(last_fetch_time_.load(),
-                                                        document->FetchTime);
+        *document = std::move(new_document);
 
-                            change_log_.push_back(*document);
+        last_fetch_time_ =
+            std::max(last_fetch_time_.load(), document->FetchTime);
 
-                            documents_with_deadline_.emplace(
-                                document->ExpirationTime(), document);
+        change_log_.push_back(*document);
 
-                            p.set_value(true);
-                          });
-                    });
-                return;
-              }
-              CreateDocument(std::move(f), std::move(c), a,
-                             ParsedDoc::EState::Added)
-                  .then([this, p = std::move(p)](auto document) mutable {
-                    LOG(INFO) << "emplace document: " << document.FileName;
-                    auto document_ptr =
-                        std::make_unique<ParsedDoc>(std::move(document));
-                    EmplaceDocument(std::move(document_ptr))
-                        .then([this, p = std::move(p)](auto) mutable {
-                          LOG(INFO) << "setting promise in create content";
-                          p.set_value(false);
-                        });
-                    LOG(INFO) << "emplace finished";
-                  });
-            });
-      });
+        documents_with_deadline_.emplace(document->ExpirationTime(), document);
+
+        p.set_value(true);
+        return;
+      }
+      auto new_document = ParsedDoc(context_, std::move(f), std::move(c), a,
+                                    ParsedDoc::EState::Added);
+      auto document_ptr = std::make_unique<ParsedDoc>(std::move(new_document));
+      EmplaceDocumentSync(std::move(document_ptr));
+      p.set_value(false);
+    });
+  });
 }
 
 cti::continuable<ParsedDoc> FileManager::CreateDocument(

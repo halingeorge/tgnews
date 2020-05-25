@@ -77,6 +77,7 @@ class FileManager {
   std::set<std::pair<uint64_t, ParsedDoc*>> documents_with_deadline_;
   std::experimental::strand<std::experimental::thread_pool::executor_type>
       documents_strand_;
+  std::atomic<bool> finished_restoring_from_disk_ = false;
   std::experimental::thread_pool& pool_;
 };
 
