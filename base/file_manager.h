@@ -243,8 +243,7 @@ class FileManager {
 
     it->second->State = ParsedDoc::EState::Removed;
 
-    change_log_.emplace_back(it->second->FileName, std::move(it->second->Data),
-                             it->second->MaxAge, it->second->State);
+    change_log_.emplace_back(std::move(*it->second));
 
     documents_with_deadline_.erase(
         {it->second->ExpirationTime(), it->second.get()});
