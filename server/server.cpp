@@ -106,17 +106,6 @@ auto OnFailCallback(std::shared_ptr<HttpServer::Response> response,
   };
 }
 
-std::unique_ptr<tgnews::CalculatedResponses> TryLoadCache() {
-//  if (boost::filesystem::exists(RESPONSES_CACHE_DUMP)) {
-//    try {
-//      return std::make_unique<tgnews::CalculatedResponses>(RESPONSES_CACHE_DUMP);
-//    } catch (std::exception& e) {
-//      LOG(INFO) << "error while parsing responses cache dump " << e.what();
-//    }
-//  }
-  return {};
-}
-
 }  // namespace
 
 Server::Server(uint32_t port, std::unique_ptr<FileManager> file_manager,
@@ -126,7 +115,6 @@ Server::Server(uint32_t port, std::unique_ptr<FileManager> file_manager,
       file_manager_(std::move(file_manager)),
       responses_cache_strand_(pool.get_executor()),
       response_builder_(response_builder),
-      responses_cache_(TryLoadCache()),
       pool_(pool) {
   server_.config.port = port;
 
@@ -361,10 +349,6 @@ void Server::UpdateResponseCache() {
                 std::unique_lock lock(responses_cache_mutex_);
                 responses_cache_ = std::move(responses_cache);
               }
-
-              responses_cache_->dump(RESPONSES_CACHE_DUMP);
-
-              file_manager_->RemoveOutdatedFiles();
             });
       })
       .fail(OnFailCallback());
