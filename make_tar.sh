@@ -14,7 +14,7 @@ cp ../build_zip.sh build_zip.sh
 mkdir build
 cd build
 cmake -DCMAKE_BUILD_TYPE=Release ..
-make
+make -j4
 cd ..
 mv build/bin/tgnews tgnews
 chmod +x tgnews

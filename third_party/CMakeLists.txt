@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.13)
 
 SET(BUILD_TESTING OFF)
 SET(function2_DIR third_party/function2)
