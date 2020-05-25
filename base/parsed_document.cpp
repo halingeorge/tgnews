@@ -120,7 +120,7 @@ static void ParseLinksFromText(const tinyxml2::XMLElement* element,
 
 namespace tgnews {
 
-ParsedDoc::ParsedDoc(const std::string& name, std::string content,
+ParsedDoc::ParsedDoc(Context* context, const std::string& name, std::string content,
                      uint64_t max_age, EState state)
     : Data(std::move(content)), MaxAge(max_age), State(state) {
   FileName = name;
@@ -180,14 +180,11 @@ ParsedDoc::ParsedDoc(const std::string& name, std::string content,
   }
   const tinyxml2::XMLElement* pElement = articleElement->FirstChildElement("p");
   {
-    std::vector<std::string> links;
     size_t wordCount = 0;
     while (pElement) {
       Text += GetFullText(pElement) + "\n";
-      ParseLinksFromText(pElement, links);
       pElement = pElement->NextSiblingElement("p");
     }
-    OutLinks = std::move(links);
   }
   const tinyxml2::XMLElement* addressElement =
       articleElement->FirstChildElement("address");
@@ -204,6 +201,9 @@ ParsedDoc::ParsedDoc(const std::string& name, std::string content,
       std::string(aElement->Attribute("rel")) == "author") {
     Author = aElement->GetText();
   }
+  ParseLang(context->LangDetect.get());
+  Tokenize(*context);
+  DetectCategory(*context);
 }
 
 ParsedDoc::ParsedDoc(const nlohmann::json& value) {
@@ -215,6 +215,10 @@ ParsedDoc::ParsedDoc(const nlohmann::json& value) {
   GET(Text);
   GET(FetchTime);
   GET(MaxAge);
+  GET(Lang);
+  GET(GoodTitle);
+  GET(GoodText);
+  GET(Category);
 #undef GET
 }
 nlohmann::json ParsedDoc::Serialize() const {
@@ -227,19 +231,23 @@ nlohmann::json ParsedDoc::Serialize() const {
   ADD(FetchTime);
   ADD(Text);
   ADD(MaxAge);
+  ADD(Lang);
+  ADD(GoodTitle);
+  ADD(GoodText);
+  ADD(Category);
 #undef ADD
   return res;
 }
 
 void ParsedDoc::ParseLang(const fasttext::FastText* model) {
-  if (Lang) {
+  if (Lang.size()) {
     // already parsed - skip
     return;
   }
   std::string sample(Title + " " + Description + " " + Text.substr(0, 100));
   auto pair = RunFasttext(model, sample, 0.4);
   if (!pair) {
-    Lang = std::nullopt;
+    Lang = "";
     return;
   }
   const std::string& label = pair->first;
@@ -259,16 +267,18 @@ static std::string Preprocess(const std::string& text,
 }
 
 void ParsedDoc::Tokenize(const tgnews::Context& context) {
+  if (GoodTitle.size() > 0 && GoodText.size()) {
+    return; // already calced
+  }
   GoodTitle = Preprocess(Title, context.Tokenizer);
   GoodText = Preprocess(Text, context.Tokenizer);
 }
 
 void ParsedDoc::DetectCategory(const tgnews::Context& context) {
   if (Category != NC_UNDEFINED) {
-    // already has category - skip
-    return;
+    return; //allready calced
   }
-  if (!GoodTitle.size() || !GoodText.size() || !Lang) {
+  if (!GoodTitle.size() || !GoodText.size() || !Lang.size()) {
     Category = NC_UNDEFINED;
     return;
   }

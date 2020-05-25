@@ -34,7 +34,7 @@ int main(int argc, char** argv) {
 
   LOG(INFO) << "context loaded";
 
-  tgnews::ResponseBuilder responseBuilder(std::move(context));
+  tgnews::ResponseBuilder responseBuilder(&context);
 
   LOG(INFO) << "response builder created";
 
@@ -42,14 +42,14 @@ int main(int argc, char** argv) {
     int port = std::stoi(argv[2]);
     LOG(INFO) << fmt::format("prepare to run on port: {}", port);
     std::experimental::thread_pool pool(4);
-    auto file_manager = std::make_unique<tgnews::FileManager>(pool);
+    auto file_manager = std::make_unique<tgnews::FileManager>(pool, &context);
     tgnews::Server server(port, std::move(file_manager), pool, &responseBuilder);
     server.Run();
     return 0;
   }
 
   std::string content_dir = argv[2];
-  auto docs = tgnews::MakeDocumentsFromDir(content_dir, FLAGS_docsCount);
+  auto docs = tgnews::MakeDocumentsFromDir(content_dir, FLAGS_docsCount, &context);
   LOG(INFO) << fmt::format("Docs size - {}", docs.size());
   if (mode == "languages") {
     std::cout << responseBuilder.AddDocuments(docs).LangAns.dump(4);

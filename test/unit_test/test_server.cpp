@@ -8,6 +8,6 @@ TEST(ServerTest, Sample)
 {
   static constexpr uint32_t kPort = 12345;
   std::experimental::thread_pool pool(1);
-  Server server(kPort, std::make_unique<FileManager>(pool), pool);
+  Server server(kPort, std::make_unique<FileManager>(pool, nullptr), pool);
   EXPECT_EQ(server.Port(), kPort);
 }

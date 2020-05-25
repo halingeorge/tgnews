@@ -19,6 +19,7 @@
 #include "base/base.h"
 #include "base/parsed_document.h"
 #include "base/time_helpers.h"
+#include "base/context.h"
 #include "fmt/format.h"
 #include "glog/logging.h"
 #include "third_party/nlohmann_json/single_include/nlohmann/json.hpp"
@@ -27,9 +28,10 @@ namespace tgnews {
 
 class FileManager {
  public:
-  explicit FileManager(std::experimental::thread_pool& pool,
+  explicit FileManager(std::experimental::thread_pool& pool, Context* context,
                        std::string content_dir = "content")
       : content_dir_(std::move(content_dir)),
+        context_(context),
         documents_strand_(pool.get_executor()),
         pool_(pool) {
     boost::filesystem::path content_path = content_dir_;
@@ -172,7 +174,7 @@ class FileManager {
       std::experimental::post(
           documents_strand_, [this, p = std::move(promise), f = std::move(f),
                               c = std::move(c), age = age]() mutable {
-            auto document_ptr = std::make_unique<ParsedDoc>(
+            auto document_ptr = std::make_unique<ParsedDoc>(context_,
                 std::move(f), std::move(c), age, ParsedDoc::EState::Added);
 
             auto address = document_ptr.get();
@@ -281,7 +283,7 @@ class FileManager {
               documents_with_deadline_.erase(
                   {document->ExpirationTime(), document});
 
-              *document = ParsedDoc(document->FileName, std::move(c), a,
+              *document = ParsedDoc(context_, document->FileName, std::move(c), a,
                                     ParsedDoc::EState::Changed);
 
               last_fetch_time_ =
@@ -308,6 +310,7 @@ class FileManager {
   }
 
  private:
+  Context* context_;
   std::string content_dir_;
   std::atomic<uint64_t> last_fetch_time_ = 0;
   std::vector<ParsedDoc> change_log_;
