@@ -48,6 +48,8 @@ class FileManager {
  private:
   cti::continuable<bool> EmplaceDocument(std::unique_ptr<ParsedDoc> document);
 
+  void EmplaceDocumentSync(std::unique_ptr<ParsedDoc> document);
+
   void DumpOnDisk(std::string_view filepath, const ParsedDoc& document);
 
   void RestoreFiles();

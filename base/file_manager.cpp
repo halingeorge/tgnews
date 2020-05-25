@@ -16,7 +16,7 @@ FileManager::FileManager(std::experimental::thread_pool& pool, Context* context,
                        content_dir));
   }
 
-  std::experimental::post(pool_, [this] { RestoreFiles(); });
+  RestoreFiles();
 }
 
 FileManager::~FileManager() {
@@ -135,21 +135,25 @@ cti::continuable<bool> FileManager::EmplaceDocument(
     std::experimental::post(
         documents_strand_,
         [this, p = std::move(promise), document = std::move(d)]() mutable {
-          LOG(INFO) << fmt::format("create document: {} fetch time: {}",
-                                   document->FileName, document->FetchTime);
-
-          last_fetch_time_ =
-              std::max(last_fetch_time_.load(), document->FetchTime);
-
-          change_log_.push_back(*document);
-
-          documents_with_deadline_.emplace(document->ExpirationTime(),
-                                           document.get());
-          document_by_name_.emplace(document->FileName, std::move(document));
+          EmplaceDocumentSync(std::move(document));
 
           p.set_value(true);
         });
   });
+}
+
+void FileManager::EmplaceDocumentSync(std::unique_ptr<ParsedDoc> document) {
+  LOG(INFO) << fmt::format("create document: {} fetch time: {}",
+                           document->FileName, document->FetchTime);
+
+  last_fetch_time_ =
+      std::max(last_fetch_time_.load(), document->FetchTime);
+
+  change_log_.push_back(*document);
+
+  documents_with_deadline_.emplace(document->ExpirationTime(),
+                                   document.get());
+  document_by_name_.emplace(document->FileName, std::move(document));
 }
 
 void FileManager::DumpOnDisk(std::string_view filepath,
@@ -181,7 +185,7 @@ void FileManager::RestoreFiles() {
       continue;
     }
 
-    EmplaceDocument(std::make_unique<ParsedDoc>(std::move(value)));
+    EmplaceDocumentSync(std::make_unique<ParsedDoc>(std::move(value)));
   }
 
   LOG(INFO) << "restored file count: " << document_by_name_.size();

@@ -343,7 +343,7 @@ void Server::UpdateResponseCache() {
                 std::unique_lock lock(responses_cache_mutex_);
                 responses_cache_ = std::move(responses_cache);
               }
-              
+
               responses_cache_->dump(RESPONSES_CACHE_DUMP);
             });
       })
