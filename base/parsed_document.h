@@ -30,6 +30,7 @@ enum ENewsCategory {
 
     NC_COUNT
 };
+const std::vector<std::string> CategoryNames = {"any", "society", "economy", "technology", "sports", "entertainment", "science", "other"};
 
 class ParsedDoc {
  public:
