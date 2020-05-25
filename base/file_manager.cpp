@@ -15,7 +15,8 @@ FileManager::FileManager(std::experimental::thread_pool& pool, Context* context,
            fmt::format("unable to create directory for index storage: {}",
                        content_dir));
   }
-  RestoreFiles();
+
+  std::experimental::post(pool_, [this] { RestoreFiles(); });
 }
 
 FileManager::~FileManager() {
