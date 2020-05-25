@@ -16,7 +16,7 @@ FileManager::FileManager(std::experimental::thread_pool& pool, Context* context,
                        content_dir));
   }
 
-  std::experimental::post(pool_, [this] {
+  std::experimental::post(documents_strand_, [this] {
     RestoreFiles();
     finished_restoring_from_disk_ = true;
   });
@@ -181,15 +181,17 @@ void FileManager::RestoreFiles() {
            boost::filesystem::directory_iterator(path), {})) {
     boost::filesystem::ifstream file(entry.path());
     nlohmann::json value;
+    std::unique_ptr<ParsedDoc> document;
     try {
       file >> value;
+      document = std::make_unique<ParsedDoc>(std::move(value));
     } catch (...) {
       LOG(INFO) << "file contains invalid json: " << entry.path();
       RemoveFileFromDisk(entry.path());
       continue;
     }
 
-    EmplaceDocument(std::make_unique<ParsedDoc>(std::move(value)));
+    EmplaceDocumentSync(std::move(document));
   }
 
   LOG(INFO) << "restored file count: " << document_by_name_.size();
