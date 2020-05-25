@@ -339,8 +339,11 @@ void Server::UpdateResponseCache() {
 
               LOG(INFO) << "add documents finished";
 
-              std::unique_lock lock(responses_cache_mutex_);
-              responses_cache_ = std::move(responses_cache);
+              {
+                std::unique_lock lock(responses_cache_mutex_);
+                responses_cache_ = std::move(responses_cache);
+              }
+              
               responses_cache_->dump(RESPONSES_CACHE_DUMP);
             });
       })
