@@ -1,11 +1,11 @@
 #pragma once 
-#include "base/document.h"
 #include "base/context.h"
 
 #include "third_party/fastText/src/fasttext.h"
 #include "third_party/nlohmann_json/single_include/nlohmann/json.hpp"
 #include <string>
 #include <vector>
+#include <limits>
 
 namespace tgnews {
 
@@ -32,19 +32,33 @@ enum ENewsCategory {
 
 class ParsedDoc {
  public:
-  ParsedDoc(const Document& doc);
-  ParsedDoc(const std::string& name, const std::string& content);
+  enum class EState {
+    Added = 0,
+    Removed,
+    Changed
+  };
+
+ public:
+  ParsedDoc(const std::string& name, std::string content, uint64_t max_age, EState state);
   ParsedDoc(const nlohmann::json& value);
   
   void ParseLang(const fasttext::FastText* model);
-  void Tokenize(const tgnews::Context& context);
-  void DetectCategory(const tgnews::Context& context);
-  void CalcWeight(const tgnews::Context& context);
+  void Tokenize(const Context& context);
+  void DetectCategory(const Context& context);
+  void CalcWeight(const Context& context);
   bool IsNews() const {
     return Category != NC_NOT_NEWS && Category != NC_UNDEFINED;
   }
+  uint64_t ExpirationTime() const {
+    return FetchTime + MaxAge;
+  }
 
   nlohmann::json Serialize() const;
+
+  std::string Data;
+
+  EState State;
+
   std::string Url;
   std::string SiteName;
   std::string Description;
@@ -53,6 +67,7 @@ class ParsedDoc {
 
   uint64_t PubTime = 0;
   uint64_t FetchTime = 0;
+  uint64_t MaxAge = 0;
 
   std::vector<std::string> OutLinks;
   std::string Title;

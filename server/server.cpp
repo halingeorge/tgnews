@@ -213,6 +213,7 @@ void Server::SetupHandlers() {
           } else {
             response->write(
                 SimpleWeb::StatusCode::server_error_service_unavailable);
+            LOG(INFO) << "response: service is unavailable";
           }
           stats_handler->OnSuccess();
         } catch (std::exception& e) {
@@ -253,11 +254,11 @@ void Server::SetupHandlers() {
 
 cti::continuable<nlohmann::json> Server::GetAllDocuments() {
   return file_manager_->GetDocuments().then(
-      [](std::vector<Document> documents) {
+      [](std::vector<ParsedDoc> documents) {
         nlohmann::json value;
         nlohmann::json articles = nlohmann::json::array();
-        for (auto document_ptr : documents) {
-          articles.push_back(document_ptr.name);
+        for (const auto& document : documents) {
+          articles.push_back(document.FileName);
         }
         value["articles"] = std::move(articles);
         LOG(INFO) << "GetDocumentThreads: " << value;
@@ -303,7 +304,7 @@ void Server::UpdateResponseCache() {
               std::unique_ptr<CalculatedResponses> responses_cache;
               try {
                 responses_cache = std::make_unique<CalculatedResponses>(
-                    response_builder_->AddDocuments(change_log));
+                    response_builder_->AddDocuments(std::move(change_log)));
               } catch (std::exception& e) {
                 LOG(ERROR) << "AddDocuments exception caught: " << e.what();
                 return;

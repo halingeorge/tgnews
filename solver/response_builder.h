@@ -3,7 +3,6 @@
 #include "cluster.h"
 
 #include "base/context.h"
-#include "base/document.h"
 
 #include <memory>
 
@@ -27,7 +26,7 @@ class CalculatedResponses {
 class ResponseBuilder {
  public:
   ResponseBuilder(tgnews::Context context);
-  CalculatedResponses AddDocuments(const std::vector<Document>& docs);
+  CalculatedResponses AddDocuments(std::vector<ParsedDoc> docs);
 
  private:
   std::vector<tgnews::ParsedDoc> Docs;

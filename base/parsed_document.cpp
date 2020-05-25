@@ -1,35 +1,39 @@
 #include "parsed_document.h"
-#include "run_fasttext.h"
+
+#include <third_party/tinyxml2/tinyxml2.h>
+#include <glog/logging.h>
 
 #include <boost/algorithm/string/join.hpp>
-#include <third_party/tinyxml2/tinyxml2.h>
-
-#include <stdexcept>
 #include <ctime>
 #include <regex>
+#include <stdexcept>
+
+#include "run_fasttext.h"
 
 static uint64_t DateToTimestamp(const std::string& date) {
-  std::regex ex("(\\d\\d\\d\\d)-(\\d\\d)-(\\d\\d)T(\\d\\d):(\\d\\d):(\\d\\d)([+-])(\\d\\d):(\\d\\d)");
-    std::smatch what;
-    if (!std::regex_match(date, what, ex) || what.size() < 10) {
-        throw std::runtime_error("wrong date format");
-    }
-    std::tm t = {};
-    t.tm_sec = std::stoi(what[6]);
-    t.tm_min = std::stoi(what[5]);
-    t.tm_hour = std::stoi(what[4]);
-    t.tm_mday = std::stoi(what[3]);
-    t.tm_mon = std::stoi(what[2]) - 1;
-    t.tm_year = std::stoi(what[1]) - 1900;
+  std::regex ex(
+      "(\\d\\d\\d\\d)-(\\d\\d)-(\\d\\d)T(\\d\\d):(\\d\\d):(\\d\\d)([+-])("
+      "\\d\\d):(\\d\\d)");
+  std::smatch what;
+  if (!std::regex_match(date, what, ex) || what.size() < 10) {
+    throw std::runtime_error("wrong date format");
+  }
+  std::tm t = {};
+  t.tm_sec = std::stoi(what[6]);
+  t.tm_min = std::stoi(what[5]);
+  t.tm_hour = std::stoi(what[4]);
+  t.tm_mday = std::stoi(what[3]);
+  t.tm_mon = std::stoi(what[2]) - 1;
+  t.tm_year = std::stoi(what[1]) - 1900;
 
-    time_t timestamp = timegm(&t);
-    uint64_t zone_ts = std::stoi(what[8]) * 60 * 60 + std::stoi(what[9]) * 60;
-    if (what[7] == "+") {
-        timestamp = timestamp - zone_ts;
-    } else if (what[7] == "-") {
-        timestamp = timestamp + zone_ts;
-    }
-    return timestamp > 0 ? timestamp : 0;
+  time_t timestamp = timegm(&t);
+  uint64_t zone_ts = std::stoi(what[8]) * 60 * 60 + std::stoi(what[9]) * 60;
+  if (what[7] == "+") {
+    timestamp = timestamp - zone_ts;
+  } else if (what[7] == "-") {
+    timestamp = timestamp + zone_ts;
+  }
+  return timestamp > 0 ? timestamp : 0;
 }
 
 static std::string GetFullText(const tinyxml2::XMLElement* element) {
@@ -49,11 +53,13 @@ static std::string GetFullText(const tinyxml2::XMLElement* element) {
   return text;
 }
 
-static void ParseLinksFromText(const tinyxml2::XMLElement* element, std::vector<std::string>& links) {
+static void ParseLinksFromText(const tinyxml2::XMLElement* element,
+                               std::vector<std::string>& links) {
   const tinyxml2::XMLNode* node = element->FirstChild();
   while (node) {
     if (const tinyxml2::XMLElement* nodeElement = node->ToElement()) {
-      if (std::strcmp(nodeElement->Value(), "a") == 0 && nodeElement->Attribute("href")) {
+      if (std::strcmp(nodeElement->Value(), "a") == 0 &&
+          nodeElement->Attribute("href")) {
         links.push_back(nodeElement->Attribute("href"));
       }
       ParseLinksFromText(nodeElement, links);
@@ -64,22 +70,27 @@ static void ParseLinksFromText(const tinyxml2::XMLElement* element, std::vector<
 
 namespace tgnews {
 
-ParsedDoc::ParsedDoc(const Document& doc) : ParsedDoc(doc.name, doc.content) {}
-
-ParsedDoc::ParsedDoc(const std::string& name, const std::string& content) {
+ParsedDoc::ParsedDoc(const std::string& name, std::string content,
+                     uint64_t max_age, EState state)
+    : Data(std::move(content)), MaxAge(max_age), State(state) {
   FileName = name;
 
+  LOG(INFO) << "ParsedDoc: " << Data;
+
   tinyxml2::XMLDocument originalDoc;
-  originalDoc.Parse(content.data());
-  const tinyxml2::XMLElement* htmlElement = originalDoc.FirstChildElement("html");
+  originalDoc.Parse(Data.data());
+  const tinyxml2::XMLElement* htmlElement =
+      originalDoc.FirstChildElement("html");
   if (!htmlElement) {
     throw std::runtime_error("Parser error: no html tag");
   }
-  const tinyxml2::XMLElement* headElement = htmlElement->FirstChildElement("head");
+  const tinyxml2::XMLElement* headElement =
+      htmlElement->FirstChildElement("head");
   if (!headElement) {
     throw std::runtime_error("Parser error: no head");
   }
-  const tinyxml2::XMLElement* metaElement = headElement->FirstChildElement("meta");
+  const tinyxml2::XMLElement* metaElement =
+      headElement->FirstChildElement("meta");
   if (!metaElement) {
     throw std::runtime_error("Parser error: no meta");
   }
@@ -107,11 +118,13 @@ ParsedDoc::ParsedDoc(const std::string& name, const std::string& content) {
     }
     metaElement = metaElement->NextSiblingElement("meta");
   }
-  const tinyxml2::XMLElement* bodyElement = htmlElement->FirstChildElement("body");
+  const tinyxml2::XMLElement* bodyElement =
+      htmlElement->FirstChildElement("body");
   if (!bodyElement) {
     throw std::runtime_error("Parser error: no body");
   }
-  const tinyxml2::XMLElement* articleElement = bodyElement->FirstChildElement("article");
+  const tinyxml2::XMLElement* articleElement =
+      bodyElement->FirstChildElement("article");
   if (!articleElement) {
     throw std::runtime_error("Parser error: no article");
   }
@@ -126,16 +139,19 @@ ParsedDoc::ParsedDoc(const std::string& name, const std::string& content) {
     }
     OutLinks = std::move(links);
   }
-  const tinyxml2::XMLElement* addressElement = articleElement->FirstChildElement("address");
+  const tinyxml2::XMLElement* addressElement =
+      articleElement->FirstChildElement("address");
   if (!addressElement) {
     return;
   }
-  const tinyxml2::XMLElement* timeElement = addressElement->FirstChildElement("time");
+  const tinyxml2::XMLElement* timeElement =
+      addressElement->FirstChildElement("time");
   if (timeElement && timeElement->Attribute("datetime")) {
     PubTime = DateToTimestamp(timeElement->Attribute("datetime"));
   }
   const tinyxml2::XMLElement* aElement = addressElement->FirstChildElement("a");
-  if (aElement && aElement->Attribute("rel") && std::string(aElement->Attribute("rel")) == "author") {
+  if (aElement && aElement->Attribute("rel") &&
+      std::string(aElement->Attribute("rel")) == "author") {
     Author = aElement->GetText();
   }
 }
@@ -148,6 +164,7 @@ ParsedDoc::ParsedDoc(const nlohmann::json& value) {
   GET(Description);
   GET(Text);
   GET(FetchTime);
+  GET(MaxAge);
 #undef GET
 }
 nlohmann::json ParsedDoc::Serialize() const {
@@ -159,14 +176,14 @@ nlohmann::json ParsedDoc::Serialize() const {
   ADD(Description);
   ADD(FetchTime);
   ADD(Text);
+  ADD(MaxAge);
 #undef ADD
   return res;
 }
 
-
 void ParsedDoc::ParseLang(const fasttext::FastText* model) {
   if (Lang) {
-    //already parsed - skip
+    // already parsed - skip
     return;
   }
   std::string sample(Title + " " + Description + " " + Text.substr(0, 100));
@@ -184,7 +201,8 @@ void ParsedDoc::ParseLang(const fasttext::FastText* model) {
   }
 }
 
-static std::string Preprocess(const std::string& text, const onmt::Tokenizer& tokenizer) {
+static std::string Preprocess(const std::string& text,
+                              const onmt::Tokenizer& tokenizer) {
   std::vector<std::string> tokens;
   tokenizer.tokenize(text, tokens);
   return boost::join(tokens, " ");
@@ -209,7 +227,8 @@ void ParsedDoc::DetectCategory(const tgnews::Context& context) {
     return;
   }
   std::string sample(GoodTitle + " " + GoodText);
-  const fasttext::FastText* model = Lang == "ru" ? context.RuCatModel.get() : context.EnCatModel.get();
+  const fasttext::FastText* model =
+      Lang == "ru" ? context.RuCatModel.get() : context.EnCatModel.get();
   auto pair = RunFasttext(model, sample, 0.0);
   if (!pair) {
     Category = NC_UNDEFINED;
@@ -244,4 +263,4 @@ void ParsedDoc::CalcWeight(const tgnews::Context& context) {
   Weight = context.Ratings.ScoreUrl(Url);
 }
 
-}
+}  // namespace tgnews

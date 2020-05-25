@@ -1,5 +1,7 @@
 #include "common.h"
 
+#include "test/common/constants.h"
+
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
@@ -79,7 +81,7 @@ std::string GenerateString(std::mt19937& mt, size_t length) {
 
 TestDocument GenerateDocument(std::mt19937& mt, std::chrono::seconds max_age) {
   std::string name = GenerateString(mt, 10);
-  std::string content = GenerateString(mt, 1000);
+  std::string content = MakeXmlDocument();
   return TestDocument(std::move(name), std::move(content), max_age);
 }
 
