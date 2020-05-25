@@ -33,8 +33,9 @@ class Server {
 
   cti::continuable<nlohmann::json> GetAllDocuments();
 
-  nlohmann::json GetDocumentThreads(uint64_t period, std::string lang_code,
-                                    std::string category);
+  std::optional<nlohmann::json> GetDocumentThreads(uint64_t period,
+                                                   std::string lang_code,
+                                                   std::string category);
 
   void UpdateResponseCache();
 

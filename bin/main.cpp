@@ -17,7 +17,7 @@ DEFINE_int32(docsCount, -1, "how much docs to read, -1 to read all");
 int main(int argc, char** argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, false);
 
-  FLAGS_minloglevel = 2;
+  FLAGS_minloglevel = 0;
   FLAGS_logtostderr = true;
 
   google::InitGoogleLogging(argv[0]);

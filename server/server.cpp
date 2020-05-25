@@ -198,6 +198,8 @@ void Server::SetupHandlers() {
         try {
           file_manager_->RemoveOutdatedFiles();
 
+          LOG(INFO) << "get threads: " << request->query_string;
+
           auto [period, lang_code, category] =
               ParseThreadsRequest(std::move(request->query_string));
           LOG(INFO) << fmt::format(
@@ -205,8 +207,13 @@ void Server::SetupHandlers() {
               lang_code, category);
           SimpleWeb::CaseInsensitiveMultimap headers;
           headers.emplace("Content-type", "application/json");
-          response->write(
-              GetDocumentThreads(period, lang_code, category).dump(), headers);
+          auto value = GetDocumentThreads(period, lang_code, category);
+          if (value.has_value()) {
+            response->write(value->dump(), headers);
+          } else {
+            response->write(
+                SimpleWeb::StatusCode::server_error_service_unavailable);
+          }
           stats_handler->OnSuccess();
         } catch (std::exception& e) {
           OnFailCallback(response, stats_handler)(std::current_exception());
@@ -258,10 +265,13 @@ cti::continuable<nlohmann::json> Server::GetAllDocuments() {
       });
 }
 
-nlohmann::json Server::GetDocumentThreads(uint64_t period,
-                                          std::string lang_code,
-                                          std::string category) {
+std::optional<nlohmann::json> Server::GetDocumentThreads(uint64_t period,
+                                                         std::string lang_code,
+                                                         std::string category) {
   std::shared_lock lock(responses_cache_mutex_);
+  if (!responses_cache_) {
+    return std::nullopt;
+  }
   return responses_cache_->GetAns(std::move(lang_code), std::move(category),
                                   period);
 }
