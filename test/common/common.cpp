@@ -1,9 +1,8 @@
 #include "common.h"
 
-#include "test/common/constants.h"
-
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "test/common/constants.h"
 
 namespace tgnews {
 
@@ -106,6 +105,14 @@ std::vector<std::string> GetDocumentNames(
 
 std::vector<std::string> GetArticles(
     SimpleWeb::Client<SimpleWeb::HTTP>& client) {
+  std::stringstream thread_id;
+  thread_id << std::this_thread::get_id();
+  auto timer_updater_name =
+      fmt::format("/timer_updater_{}.html", thread_id.str());
+
+  PutRequest(client, timer_updater_name, MakeXmlDocument(), std::chrono::seconds(60));
+  DeleteRequest(client, timer_updater_name);
+
   auto response = client.request("GET", "/_all_documents", /*content =*/"");
 
   EXPECT_EQ(response->status_code, "200 OK");

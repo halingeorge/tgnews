@@ -3,6 +3,7 @@
 
 #include "third_party/fastText/src/fasttext.h"
 #include "third_party/nlohmann_json/single_include/nlohmann/json.hpp"
+#include "glog/logging.h"
 #include <string>
 #include <vector>
 #include <limits>
@@ -50,6 +51,8 @@ class ParsedDoc {
     return Category != NC_NOT_NEWS && Category != NC_UNDEFINED;
   }
   uint64_t ExpirationTime() const {
+    LOG(INFO) << "fetch time: " << FetchTime;
+    LOG(INFO) << "max age: " << MaxAge;
     return FetchTime + MaxAge;
   }
 

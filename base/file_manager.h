@@ -89,7 +89,7 @@ class FileManager {
     return cti::make_continuable<void>([this](auto&& promise) {
       std::experimental::post(
           documents_strand_, [this, p = std::move(promise)]() mutable {
-            auto now = NowCount();
+            auto now = last_fetch_time_.load();
 
             std::vector<std::string> remove_from_disk;
             for (auto it = documents_with_deadline_.begin();
@@ -97,6 +97,9 @@ class FileManager {
               if (it->first > now) {
                 break;
               }
+              LOG(INFO) << fmt::format(
+                  "now: {} remove outdated file: {} with deadline: {}", now,
+                  it->second->FileName, it->first);
               remove_from_disk.push_back(it->second->FileName);
               RemoveFileFromMap(it->second->FileName);
             }
@@ -119,7 +122,8 @@ class FileManager {
                  std::experimental::post(
                      documents_strand_, [this, p = std::move(promise),
                                          f = std::move(f)]() mutable {
-                       auto now = NowCount();
+                       auto now = last_fetch_time_.load();
+
                        auto it = document_by_name_.find(f);
                        VERIFY(it != document_by_name_.end(),
                               fmt::format(
@@ -173,7 +177,12 @@ class FileManager {
 
             auto address = document_ptr.get();
 
-            LOG(INFO) << "create document: " << document_ptr->FileName;
+            LOG(INFO) << fmt::format("create document: {} fetch time: {}",
+                                     document_ptr->FileName,
+                                     document_ptr->FetchTime);
+
+            last_fetch_time_ =
+                std::max(last_fetch_time_.load(), document_ptr->FetchTime);
 
             change_log_.push_back(*document_ptr);
 
@@ -243,11 +252,16 @@ class FileManager {
 
     it->second->State = ParsedDoc::EState::Removed;
 
-    change_log_.emplace_back(std::move(*it->second));
+    auto expiration_time = it->second->ExpirationTime();
+    auto* address = it->second.get();
 
-    documents_with_deadline_.erase(
-        {it->second->ExpirationTime(), it->second.get()});
+    auto document = std::move(*it->second);
+
+    documents_with_deadline_.erase({expiration_time, address});
     document_by_name_.erase(it);
+
+    change_log_.emplace_back(std::move(document));
+
     return true;
   }
 
@@ -269,6 +283,9 @@ class FileManager {
 
               *document = ParsedDoc(document->FileName, std::move(c), a,
                                     ParsedDoc::EState::Changed);
+
+              last_fetch_time_ =
+                  std::max(last_fetch_time_.load(), document->FetchTime);
 
               change_log_.push_back(*document);
 
@@ -292,6 +309,7 @@ class FileManager {
 
  private:
   std::string content_dir_;
+  std::atomic<uint64_t> last_fetch_time_ = 0;
   std::vector<ParsedDoc> change_log_;
   std::unordered_map<std::string, std::unique_ptr<ParsedDoc>> document_by_name_;
   std::set<std::pair<uint64_t, ParsedDoc*>> documents_with_deadline_;
